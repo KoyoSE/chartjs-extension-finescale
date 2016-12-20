@@ -1,7 +1,6 @@
 {
   "name": "chartjs-extension-finescale.js",
-  "homepage": "",
-  "description": "scale extension for chart.js.",
+  "description": "Fine scale extension for chart.js.",
   "version": "0.0.1",
   "license": "MIT",
   "main": "src/chartjs-extension-finescale.js",
@@ -9,6 +8,11 @@
     "type": "git",
     "url": "https://github.com/KoyoSE/chartjs-extension-finescale.git"
   },
+  "author": "saito-toshiki <saito@koyo-se.com>",
+  "bugs": {
+    "url": "https://github.com/KoyoSE/chartjs-extension-finescale/issues"
+  },
+  "homepage": "https://github.com/KoyoSE/chartjs-extension-finescale#readme",
 
   "devDependencies": {
     "browserify": "^13.0.0",
