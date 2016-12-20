@@ -44,8 +44,8 @@ module.exports = function(Chart) {
 		// core.helpers.js Replacement
 		// ----------------------
 
+		// niceNum for fineScale
 		niceNum: function(range, round) {
-
 			var exponent = Math.floor(helpers.log10(range));
 			var fraction = range / Math.pow(10, exponent);
 			var niceFraction;
@@ -60,113 +60,119 @@ module.exports = function(Chart) {
 		},
 
 		// ----------------------
-		// core.ticks.js linear functionReplacement
+		// core.ticks.js Replacement
 		// ----------------------
-
-		getDicimalDigits: function(value) {
-
-			value = value === 0 ? 1 : value;
-			var exponent = Math.floor(helpers.log10(value));
-
-			return {
-				digits: exponent > 0 ? 0 : Math.abs(exponent),
-				magnification: Math.pow(10, exponent)
-			};
-		},
-
-		// get scale level 0-2
-		getLevel: function(tickValue, stepSize, magnification) {
-			// Level discrimination
-			var t1 = (tickValue / magnification) % (stepSize[0] / magnification);
-			var t2 = (tickValue / magnification) % (stepSize[1] / magnification);
-			return t1 === 0 ? 0 : (t2 === 0 ? 1 : 2);
-		},
 
 		// Generator of fine linear ticks data
 		fineLinear: function(generationOptions, dataRange) {
-
 			var me = this;
+			// for return
 			var ticks = [];
 			var levels = [];
 			var isDisplayTicks = [];
 			var displayTicks = [];
-
-			var tickOpts = [me.options.ticks, me.options.subScale.ticks, me.options.subScale.subScale.ticks];
-
+			// options
+			var optsTick = generationOptions.optsTick;
+			// factor
 			var niceRange = me.niceNum(dataRange.max - dataRange.min, false);
 			var stepSize = [];
 			stepSize[0] = me.niceNum(niceRange / (generationOptions.maxTicks - 1), true);
 			stepSize[1] = me.niceNum(stepSize[0] / 10, true);
 			stepSize[2] = me.niceNum(stepSize[1] / 10, true);
-			var stepSizeLevel = 2;
+			// Pointer of minimum stepSize.
+			var pointerStepSize = 2;
 
 			// process of stepSize option
 			if (generationOptions.stepSize && generationOptions.stepSize > 0) {
-				var value = generationOptions.stepSize;
-				for (var i = 0; i < me.levelMax; i++) {
-					if (stepSize[i] <= generationOptions.stepSize) {
+				// The maximum number of ticks is 1000.
+				// This is for performance.
+				var gStepSize = generationOptions.stepSize;
+				while ((dataRange.max - dataRange.min) / gStepSize > 1000) {
+					gStepSize *= 10;
+				}
+				// Check the stepSize of each tick level and
+				// set the minimum stepSize to generationOptions.stepSize.
+				var value = gStepSize;
+				for (var i = 0; i < generationOptions.levelMax; i++) {
+					if (stepSize[i] <= gStepSize) {
 						stepSize[i] = value;
-						stepSizeLevel = value !== 0 ? i : stepSizeLevel;
+						pointerStepSize = value !== 0? i: pointerStepSize;
 						value = 0;
 					}
 				}
-				stepSize[stepSizeLevel] = stepSize[stepSizeLevel] > generationOptions.stepSize ? generationOptions.stepSize : stepSize[stepSizeLevel];
+				stepSize[pointerStepSize] = stepSize[pointerStepSize] > gStepSize? gStepSize: stepSize[pointerStepSize];
 			}
 
+			// Nice numerical value for min & max
 			var niceMin = Math.floor(dataRange.min / stepSize[0]) * stepSize[0];
 			var niceMax = Math.ceil(dataRange.max / stepSize[0]) * stepSize[0];
+			// Max and Min value of scale
+			var startTick = generationOptions.min !== undefined? generationOptions.min: niceMin;
+			var endTick = generationOptions.max !== undefined? generationOptions.max: niceMax;
 
-			// process of min max stepSize option
-			// if (generationOptions.min && generationOptions.max && generationOptions.stepSize) {
-			// 	// minMax Delta Divisible By Step Size
-			// 	var minMaxDDBSS = ((generationOptions.max - generationOptions.min) % generationOptions.stepSize) === 0;
-			// 	if (minMaxDDBSS) {
-			// 		niceMin = generationOptions.min;
-			// 		niceMax = generationOptions.max;
-			// 	}
-			// }
-			var startTick = generationOptions.min !== undefined ? generationOptions.min : niceMin;
-			var endTick = generationOptions.max !== undefined ? generationOptions.max : niceMax;
+			// ss: stepSize
+			var getDicimalDigits = function(ss) {
+				ss = ss === 0? 1: ss;
+				var exponent = Math.floor(helpers.log10(ss));
+
+				return {
+					digits: exponent > 0? 0: Math.abs(exponent),
+					magnification: Math.pow(10, exponent)
+				};
+			};
 
 			// Calculation parameters
 			var stepSizeDicimal = [
-				me.getDicimalDigits(stepSize[0]),
-				me.getDicimalDigits(stepSize[1]),
-				me.getDicimalDigits(stepSize[2])
+				getDicimalDigits(stepSize[0]),
+				getDicimalDigits(stepSize[1]),
+				getDicimalDigits(stepSize[2])
 			];
 
 			// -------
-
 			// Create ticks data
+
+			// Calculation of scale level (0-2)
 			var level, tickValue;
-			// Number of tick marks for loop
-			var stepCount = +(((niceMax - niceMin) / stepSize[stepSizeLevel]).toFixed(stepSizeDicimal[stepSizeLevel].digits));
-			// --push start tick --
+
+			// tv: tickValue
+			// ss: stepSize[]
+			// mc: magnification
+			var getLevel = function(tv, ss, mc) {
+				// Level discrimination
+				var t1 = (tv / mc) % (ss[0] / mc);
+				var t2 = (tv / mc) % (ss[1] / mc);
+				return t1 === 0? 0: (t2 === 0? 1: 2);
+			};
+
+			// Number of tick for loop
+			var stepCount = +(((niceMax - niceMin) / stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits));
+			// --push start tick--
 			ticks.push(startTick);
-			levels.push(me.getLevel(startTick, stepSize, stepSizeDicimal[stepSizeLevel].magnification));
-			for (var index = 1; index < stepCount; ++index) {
-				tickValue = niceMin + +((index * stepSize[stepSizeLevel]).toFixed(stepSizeDicimal[stepSizeLevel].digits));
+			levels.push(getLevel(startTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
+			for (var index = 1; index < stepCount; index++) {
+				tickValue = niceMin + +((index * stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits));
 				if ((tickValue <= startTick) || (endTick <= tickValue)) {
 					continue;
 				}
-				level = me.getLevel(tickValue, stepSize, stepSizeDicimal[stepSizeLevel].magnification);
+				level = getLevel(tickValue, stepSize, stepSizeDicimal[pointerStepSize].magnification);
 				// --push ticks--
 				ticks.push(+((tickValue).toFixed(stepSizeDicimal[level].digits)));
 				levels.push(level);
 			}
-			// --push end tick --
+			// --push end tick--
 			ticks.push(endTick);
-			levels.push(me.getLevel(endTick, stepSize, stepSizeDicimal[stepSizeLevel].magnification));
+			levels.push(getLevel(endTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
 
 			// -------
 
-			var isDraw;
-			// helpers.each(me.ticks, function(label, index) {
+			// Setting display flag for each tick.
+			// and setting display ticks array.
+			var isDisplay;
 			for (index = 0; index < ticks.length; index++) {
-				// 最初と最後は強制表示
-				isDraw = index !== 0 ? (index !== ticks.length - 1 ? !!tickOpts[levels[index]].display : true) : true;
-				isDisplayTicks.push(isDraw);
-				if (isDraw) {
+				// Forced display of the first and last ticks.
+				isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
+				isDisplayTicks.push(isDisplay);
+				if (isDisplay) {
 					displayTicks.push(ticks[index]);
 				}
 			}
@@ -202,57 +208,56 @@ module.exports = function(Chart) {
 			}
 		},
 
+		// Compute an tick number upper limit depending on display area.
 		getTickLimit: function() {
-			var maxTicks;
 			var me = this;
-			var tickOpts = me.options.ticks;
+			var maxTicks;
+			var optsTick = me.options.ticks;
 
 			if (me.isHorizontal()) {
-				maxTicks = Math.min(tickOpts.maxTicksLimit ? tickOpts.maxTicksLimit : 11, Math.ceil(me.width / 50));
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 50));
 			} else {
-				// The factor of 2 used to scale the font size has been experimentally determined.(for linear type)
-				// The finelinear scale sets the factor to 1.5.
-				var tickFontSize = helpers.getValueOrDefault(tickOpts.fontSize, Chart.defaults.global.defaultFontSize);
-				maxTicks = Math.min(tickOpts.maxTicksLimit ? tickOpts.maxTicksLimit : 11, Math.ceil(me.height / (1.5 * tickFontSize)));
+				// The factor of 1.5 used to scale the font size has been experimentally determined.
+				var tickFontSize = helpers.getValueOrDefault(optsTick.fontSize, Chart.defaults.global.defaultFontSize);
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.height / (1.5 * tickFontSize)));
 			}
-
-			return maxTicks;
+			// Minimum is 2.
+			return Math.max(2, maxTicks);
 		},
 
+		// Build of ticks
 		buildTicks: function() {
 			var me = this;
+			// constant of sub scale max.
 			me.levelMax = 3;
-
+			// options
 			var opts = me.options;
-			var tickOpts = [opts.ticks, opts.subScale.ticks, opts.subScale.subScale.ticks];
-			// var gridLinesOpts = [me.options.gridLines, me.options.subScale.gridLines, me.options.subScale.subScale.gridLines];
+			var optsTick = [opts.ticks, opts.subScale.ticks, opts.subScale.subScale.ticks];
 
 			var maxTicks = me.getTickLimit();
-			maxTicks = Math.max(2, maxTicks);
-
 			var numericGeneratorOptions = {
 				maxTicks: maxTicks,
-				min: tickOpts[0].min,
-				max: tickOpts[0].max,
-				stepSize: helpers.getValueOrDefault(tickOpts[0].fixedStepSize, tickOpts[0].stepSize)
+				min: optsTick[0].min,
+				max: optsTick[0].max,
+				stepSize: helpers.getValueOrDefault(optsTick[0].fixedStepSize, optsTick[0].stepSize),
+				optsTick: optsTick,
+				levelMax: me.levelMax
 			};
-
 			var fineLinear = me.fineLinear(numericGeneratorOptions, me);
 			me.ticks = fineLinear.ticks;
 			me.tickLevels = fineLinear.levels;
 			me.isDisplayTicks = fineLinear.isDisplayTicks;
 			me.displayTicks = fineLinear.displayTicks;
 
-			// 軸によって ticks をリバース
 			me.handleDirectionalChanges();
 
-			// At this point, we need to update our max and min given the tick values since we have expanded the
-			// range of the scale
+			// At this point, we need to update our max and min given the tick values
+			// since we have expanded the range of the scale
 			me.max = fineLinear.max;
 			me.min = fineLinear.min;
 
-			// オプションによって ticksをリバース
-			if (tickOpts[0].reverse) {
+			// Handling the reverse option.
+			if (optsTick[0].reverse) {
 				// ticks.reverse();
 				me.ticksReverse();
 				me.start = me.max;
@@ -267,12 +272,9 @@ module.exports = function(Chart) {
 		// core.scale.js Replacement
 		// ----------------------
 
-		// saito なぜ元を呼び出せないかを調べる。
-		// getscale を使わなければ呼べる？
-
 		computeTextSize: function(context, tick, font) {
-			return helpers.isArray(tick) ?
-				helpers.longestText(context, font, tick) :
+			return helpers.isArray(tick)?
+				helpers.longestText(context, font, tick):
 				context.measureText(tick).width;
 		},
 
@@ -292,92 +294,83 @@ module.exports = function(Chart) {
 		},
 
 		// Actually draw the scale on the canvas
-		// @param {rectangle} chartArea : the area of the chart to draw full grid lines on
+		// @param {rectangle} chartArea: the area of the chart to draw full grid lines on
 		draw: function(chartArea) {
 			var me = this;
-			var options = [me.options, me.options.subScale, me.options.subScale.subScale];
-
-			if (!options[0].display) {
+			var opts = [me.options, me.options.subScale, me.options.subScale.subScale];
+			if (!opts[0].display) {
 				return;
 			}
 
+			// canvas
 			var context = me.ctx;
 
+			// options
 			var globalDefaults = Chart.defaults.global;
-
-			// saito:
-			var optionTicks = [options[0].ticks, options[1].ticks, options[2].ticks];
-			var gridLines = [options[0].gridLines, options[1].gridLines, options[2].gridLines];
-			var scaleLabel = [options[0].scaleLabel, options[1].scaleLabel, options[2].scaleLabel];
+			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
+			var optsGridLines = [opts[0].gridLines, opts[1].gridLines, opts[2].gridLines];
+			var optsScaleLabel = [opts[0].scaleLabel, opts[1].scaleLabel, opts[2].scaleLabel];
 
 			// figure out the maximum number of gridlines to show
 			var maxTicks;
-			if (optionTicks[0].maxTicksLimit) {
-				maxTicks = optionTicks[0].maxTicksLimit;
+			if (optsTick[0].maxTicksLimit) {
+				maxTicks = optsTick[0].maxTicksLimit;
 			}
 
 			// for tick
-			// var tickFontColor = helpers.getValueOrDefault(optionTicks[0].fontColor, globalDefaults.defaultFontColor);
 			var tickFont = [
-				me.parseFontOptions(optionTicks[0]),
-				me.parseFontOptions(optionTicks[1]),
-				me.parseFontOptions(optionTicks[2])
+				me.parseFontOptions(optsTick[0]),
+				me.parseFontOptions(optsTick[1]),
+				me.parseFontOptions(optsTick[2])
 			];
 
-			var tl = gridLines[0].drawTicks ? [
-				gridLines[0].tickMarkLength,
-				gridLines[1].drawTicks ? gridLines[1].tickMarkLength || gridLines[0].tickMarkLength * 0.6 : 0, // sub tick length
-				gridLines[2].drawTicks ? gridLines[2].tickMarkLength || gridLines[0].tickMarkLength * 0.4 : 0  // sub-sub tick length
-			] : [0, 0, 0];
+			// tick length
+			var tl = optsGridLines[0].drawTicks? [
+				optsGridLines[0].tickMarkLength,
+				optsGridLines[1].drawTicks? optsGridLines[1].tickMarkLength || optsGridLines[0].tickMarkLength * 0.6: 0, // sub tick length
+				optsGridLines[2].drawTicks? optsGridLines[2].tickMarkLength || optsGridLines[0].tickMarkLength * 0.4: 0  // sub-sub tick length
+			]: [0, 0, 0];
 
+			// draw data
 			var itemsToDraw = [];
 
-			// for label
-			var scaleLabelFontColor = helpers.getValueOrDefault(scaleLabel[0].fontColor, globalDefaults.defaultFontColor);
-			var scaleLabelFont = me.parseFontOptions(scaleLabel[0]);
+			// for scale label
+			var scaleLabelFontColor = helpers.getValueOrDefault(optsScaleLabel[0].fontColor, globalDefaults.defaultFontColor);
+			var scaleLabelFont = me.parseFontOptions(optsScaleLabel[0]);
 
-			var isRotated = me.labelRotation !== 0;
-			var skipRatio;
-			var useAutoskipper = optionTicks[0].autoSkip;
 			var isHorizontal = me.isHorizontal();
+			var isRotated = me.labelRotation !== 0;
 
+			// -----
 			var labelRotationRadians = helpers.toRadians(me.labelRotation);
-			var cosRotation = Math.cos(labelRotationRadians);
-			var longestRotatedLabel = me.longestLabelWidth * cosRotation;
 
-			// 目盛り重なり防止処理
-			// 水平軸の時、重なる目盛の表示スキップを、傾きによってスキップするかどうか判定
 			if (isHorizontal) {
 				// horizontal
+				var skipRatio = false;
 
-				skipRatio = false;
-
-				// Only calculate the skip ratio with the half width of longestRotateLabel if we got an actual rotation
-				// See #2584
-				if (isRotated) {
-					longestRotatedLabel /= 2;
-				}
-
-				if ((longestRotatedLabel + optionTicks[0].autoSkipPadding) * me.ticks.length > (me.width - (me.paddingLeft + me.paddingRight))) {
-					skipRatio = 1 + Math.floor(((longestRotatedLabel + optionTicks[0].autoSkipPadding) * me.ticks.length) / (me.width - (me.paddingLeft + me.paddingRight)));
-				}
-
-				// if they defined a max number of optionTicks,
-				// increase skipRatio until that number is met
-				if (maxTicks && me.ticks.length > maxTicks) {
-					while (!skipRatio || me.ticks.length / (skipRatio || 1) > maxTicks) {
-						if (!skipRatio) {
-							skipRatio = 1;
+				// Calculating autoskip
+				if (optsTick[0].autoSkip) {
+					var cosRotation = Math.cos(labelRotationRadians);
+					var longestRotatedLabelWidth = isRotated? me.longestLabelWidth * cosRotation / 2: me.longestLabelWidth * cosRotation;
+					var ticksWidth = (longestRotatedLabelWidth + optsTick[0].autoSkipPadding) * me.displayTicks.length;
+					var scaleWidth = (me.width - (me.paddingLeft + me.paddingRight));
+					if (ticksWidth > scaleWidth) {
+						skipRatio = 1 + Math.floor(ticksWidth / scaleWidth);
+					}
+					// if they defined a max number of optionTicks,
+					// increase skipRatio until that number is met
+					if (maxTicks && me.displayTicks.length > maxTicks) {
+						while (!skipRatio || me.ticks.length / (skipRatio || 1) > maxTicks) {
+							if (!skipRatio) {
+								skipRatio = 1;
+							}
+							skipRatio += 1;
 						}
-						skipRatio += 1;
 					}
 				}
 
-				if (!useAutoskipper) {
-					skipRatio = false;
-				}
-
 			}
+			// -----
 
 			helpers.each(me.ticks, function(label, index) {
 				// If the callback returned a null or undefined value, do not draw this line
@@ -386,37 +379,46 @@ module.exports = function(Chart) {
 				}
 
 				var level = me.tickLevels[index];
-				if (!options[level].display) {
+
+				// display option
+				if (!opts[level].display) {
 					return;
 				}
 
-				// --------------
-				// 重なり防止処理
-				var isLastTick = me.ticks.length === index + 1;
-				var shouldSkip = (skipRatio > 1 && index % skipRatio > 0) || (index % skipRatio === 0 && index + skipRatio >= me.ticks.length);
-				if (shouldSkip && !isLastTick || (label === undefined || label === null)) {
+				// Process of autoSkip
+				var isLastTick = me.displayTicks.length === index + 1;
+				var shouldSkip = (skipRatio > 1 && index % skipRatio > 0) || (index % skipRatio === 0 && index + skipRatio >= me.displayTicks.length);
+				if (shouldSkip && !isLastTick) {
 					return;
 				}
-				// --------------
 
 				// for glidline border
-				// オプション定義がない場合は Level=0 の設定に従う
-				var borderDash = helpers.getValueOrDefault(gridLines[level].borderDash, gridLines[0].borderDash);
-				var borderDashOffset = helpers.getValueOrDefault(gridLines[level].borderDashOffset, gridLines[0].borderDashOffset);
-				var drawOnChartArea = helpers.getValueOrDefault(gridLines[level].drawOnChartArea, gridLines[0].drawOnChartArea);
-				var display = gridLines[0].display ? gridLines[level].display : false;
-				var drawTicks = gridLines[0].drawTicks ? gridLines[level].drawTicks : false;
+				// If the option of subScale (level 1, 2) is not defined, it follows scale (level 0)
+				var borderDash = helpers.getValueOrDefault(optsGridLines[level].borderDash, optsGridLines[0].borderDash);
+				var borderDashOffset = helpers.getValueOrDefault(optsGridLines[level].borderDashOffset, optsGridLines[0].borderDashOffset);
+				var display = optsGridLines[0].display? helpers.getValueOrDefault(optsGridLines[level].display, optsGridLines[0].display): false;
+				var drawTicks = optsGridLines[0].drawTicks? helpers.getValueOrDefault(optsGridLines[level].drawTicks, optsGridLines[0].drawTicks): false;
+				var drawOnChartArea = optsGridLines[0].drawOnChartArea? helpers.getValueOrDefault(optsGridLines[level].drawOnChartArea, optsGridLines[0].drawOnChartArea): false;
 
+				// zero line option
 				var lineWidth, lineColor;
-				if (index === (typeof me.zeroLineIndex !== 'undefined' ? me.zeroLineIndex : 0)) {
+				if (index === (typeof me.zeroLineIndex !== 'undefined'? me.zeroLineIndex: 0)) {
 					// Draw the first index specially
-					lineWidth = gridLines[0].zeroLineWidth;
-					lineColor = gridLines[0].zeroLineColor;
+					lineWidth = optsGridLines[0].zeroLineWidth;
+					lineColor = optsGridLines[0].zeroLineColor;
 				} else {
 					// for array setting
-					lineWidth = helpers.isArray(gridLines[0].lineWidth) ? helpers.getValueAtIndexOrDefault(gridLines[0].lineWidth, index) : helpers.getValueAtIndexOrDefault(gridLines[level].lineWidth, index, gridLines[0].lineWidth);
-					lineColor = helpers.isArray(gridLines[0].color) ? helpers.getValueAtIndexOrDefault(gridLines[0].color, index) : helpers.getValueAtIndexOrDefault(gridLines[level].color, index, gridLines[0].color);
+					var lw1 = helpers.getValueAtIndexOrDefault(optsGridLines[0].lineWidth, index);
+					var lw2 = helpers.getValueAtIndexOrDefault(optsGridLines[level].lineWidth, index, optsGridLines[0].lineWidth);
+					lineWidth = helpers.isArray(optsGridLines[0].lineWidth)? lw1: lw2;
+
+					var lc1 = helpers.getValueAtIndexOrDefault(optsGridLines[0].color, index);
+					var lc2 = helpers.getValueAtIndexOrDefault(optsGridLines[level].color, index, optsGridLines[0].color);
+					lineColor = helpers.isArray(optsGridLines[0].color)? lc1: lc2;
 				}
+
+				// label
+				var lFontColor = helpers.getValueOrDefault(optsTick[level].fontColor, globalDefaults.defaultFontColor);
 
 				// Common properties
 				var tx1, ty1, tx2, ty2, x1, y1, x2, y2, labelX, labelY;
@@ -427,25 +429,24 @@ module.exports = function(Chart) {
 					// horizontal
 
 					// label
-					if (options[0].position === 'bottom') {
+					if (opts[0].position === 'bottom') {
 						// bottom
 						textBaseline = 'top';
-						textAlign = !isRotated ? 'center' : 'right';
-						labelY = (isRotated) ? me.top + tl[0] : me.top + tl[level]; // saito この１２はどうする？
+						textAlign = !isRotated? 'center': 'right';
+						labelY = isRotated? me.top + tl[0]: me.top + tl[level];
 					} else {
 						// top
 						textBaseline = 'bottom';
-						textAlign = !isRotated ? 'center' : 'left';
-						labelY = (isRotated) ? me.bottom - tl[0] : me.bottom - tl[level];
+						textAlign = !isRotated? 'center': 'left';
+						labelY = isRotated? me.bottom - tl[0]: me.bottom - tl[level];
 					}
 					// x values for optionTicks (need to consider offsetLabel option)
-					labelX = me.getPixelForTick(index, gridLines[0].offsetGridLines) + optionTicks[0].labelOffset;
+					labelX = me.getPixelForTick(index, optsGridLines[0].offsetGridLines) + optsTick[0].labelOffset;
 
 					// ticks
-					var xLineValue = me.getPixelForTick(index) + helpers.aliasPixel(lineWidth); // xvalues for tick & glid lines
-					var yTickStart = options[0].position === 'bottom' ? me.top : me.bottom - tl[level];
-					var yTickEnd = options[0].position === 'bottom' ? me.top + tl[level] : me.bottom;
-
+					var xLineValue = me.getPixelForTick(index) + helpers.aliasPixel(lineWidth);
+					var yTickStart = opts[0].position === 'bottom'? me.top: me.bottom - tl[level];
+					var yTickEnd = opts[0].position === 'bottom'? me.top + tl[level]: me.bottom;
 					tx1 = tx2 = x1 = x2 = xLineValue;
 					ty1 = yTickStart;
 					ty2 = yTickEnd;
@@ -455,28 +456,25 @@ module.exports = function(Chart) {
 
 				} else {
 					// vertical
-					var isLeft = options[0].position === 'left';
-					var tickPadding = optionTicks[0].padding;
+					var isLeft = opts[0].position === 'left';
+					var tickPadding = optsTick[0].padding;
 					var labelXOffset;
 
 					// label
-					if (optionTicks[0].mirror) {
-						textAlign = isLeft ? 'left' : 'right';
+					if (optsTick[0].mirror) {
+						textAlign = isLeft? 'left': 'right';
 						labelXOffset = tickPadding;
 					} else {
-						textAlign = isLeft ? 'right' : 'left';
+						textAlign = isLeft? 'right': 'left';
 						labelXOffset = tl[level] + tickPadding;
 					}
-
-					labelX = isLeft ? me.right - labelXOffset : me.left + labelXOffset;
-
-					var yLineValue = me.getPixelForTick(index); // xvalues for grid lines
-					yLineValue += helpers.aliasPixel(lineWidth);
-					labelY = me.getPixelForTick(index, gridLines[0].offsetGridLines);
+					labelX = isLeft? me.right - labelXOffset: me.left + labelXOffset;
+					var yLineValue = me.getPixelForTick(index) + helpers.aliasPixel(lineWidth);
+					labelY = me.getPixelForTick(index, optsGridLines[0].offsetGridLines);
 
 					// ticks
-					var xTickStart = options[0].position === 'right' ? me.left : me.right - tl[level];
-					var xTickEnd = options[0].position === 'right' ? me.left + tl[level] : me.right;
+					var xTickStart = opts[0].position === 'right'? me.left: me.right - tl[level];
+					var xTickEnd = opts[0].position === 'right'? me.left + tl[level]: me.right;
 					tx1 = xTickStart;
 					tx2 = xTickEnd;
 					// glid line
@@ -496,7 +494,7 @@ module.exports = function(Chart) {
 					tlY1: ty1,
 					tlX2: tx2,
 					tlY2: ty2,
-					tlColor: gridLines[0].color,
+					tlColor: optsGridLines[0].color,
 					// grid line on chart area
 					glDraw: drawOnChartArea,
 					glX1: x1,
@@ -515,15 +513,14 @@ module.exports = function(Chart) {
 					lRotation: -1 * labelRotationRadians,
 					lTextBaseline: textBaseline,
 					lTextAlign: textAlign,
-					lFontColor: helpers.getValueOrDefault(optionTicks[level].fontColor, globalDefaults.defaultFontColor),
+					lFontColor: lFontColor,
 				});
 			});
 
-			// 表示処理
 			// Draw all of the tick labels, tick marks, and grid lines at the correct places
 			helpers.each(itemsToDraw, function(itemToDraw) {
 
-				// グリッド線
+				// line
 				if (itemToDraw.display) {
 
 					context.save();
@@ -533,7 +530,7 @@ module.exports = function(Chart) {
 
 					context.beginPath();
 
-					// グリッド 目盛りエリア
+					// ticks line (scale area)
 					if (itemToDraw.tlDraw) {
 						context.moveTo(itemToDraw.tlX1, itemToDraw.tlY1);
 						context.lineTo(itemToDraw.tlX2, itemToDraw.tlY2);
@@ -542,13 +539,13 @@ module.exports = function(Chart) {
 
 					context.strokeStyle = itemToDraw.glColor;
 
-					// 破線の設定
+					// dashed line
 					if (context.setLineDash) {
 						context.setLineDash(itemToDraw.glBorderDash);
 						context.lineDashOffset = itemToDraw.glBorderDashOffset;
 					}
 
-					// グリッド チャートエリア
+					// grid line (chart area)
 					if (itemToDraw.glDraw) {
 						context.moveTo(itemToDraw.glX1, itemToDraw.glY1);
 						context.lineTo(itemToDraw.glX2, itemToDraw.glY2);
@@ -557,7 +554,7 @@ module.exports = function(Chart) {
 					context.restore();
 				}
 
-				// 目盛りテキスト表示
+				// display ticks text
 				if (itemToDraw.lDisplay) {
 					context.save();
 					context.translate(itemToDraw.lX, itemToDraw.lY);
@@ -585,9 +582,8 @@ module.exports = function(Chart) {
 
 			// ------
 
-			// スケールの表題表示
-			// rightの時ラベルの向きを左にする
-			if (scaleLabel[0].display) {
+			// display schale label
+			if (optsScaleLabel[0].display) {
 				// Draw the scale label
 				var scaleLabelX;
 				var scaleLabelY;
@@ -596,13 +592,13 @@ module.exports = function(Chart) {
 				if (isHorizontal) {
 					// horizontal
 					scaleLabelX = me.left + ((me.right - me.left) / 2); // midpoint of the width
-					scaleLabelY = options[0].position === 'bottom' ? me.bottom - (scaleLabelFont.size / 2) : me.top + (scaleLabelFont.size / 2);
+					scaleLabelY = opts[0].position === 'bottom'? me.bottom - (scaleLabelFont.size / 2): me.top + (scaleLabelFont.size / 2);
 				} else {
 					// vertical
-					var isLeft = options[0].position === 'left';
-					scaleLabelX = isLeft ? me.left + (scaleLabelFont.size / 2) : me.right - (scaleLabelFont.size / 2);
+					var isLeft = opts[0].position === 'left';
+					scaleLabelX = isLeft? me.left + (scaleLabelFont.size / 2): me.right - (scaleLabelFont.size / 2);
 					scaleLabelY = me.top + ((me.bottom - me.top) / 2);
-					rotation = isLeft ? -0.5 * Math.PI : -0.5 * Math.PI;
+					rotation = isLeft? -0.5 * Math.PI: -0.5 * Math.PI;
 				}
 
 				context.save();
@@ -612,16 +608,15 @@ module.exports = function(Chart) {
 				context.textBaseline = 'middle';
 				context.fillStyle = scaleLabelFontColor; // render in correct colour
 				context.font = scaleLabelFont.font;
-				context.fillText(scaleLabel[0].labelString, 0, 0);
+				context.fillText(optsScaleLabel[0].labelString, 0, 0);
 				context.restore();
 			}
 
-			// ボーダーの表示
-			if (gridLines[0].drawBorder) {
-				// return;
+			// draw border
+			if (optsGridLines[0].drawBorder) {
 				// Draw the line at the edge of the axis
-				context.lineWidth = helpers.getValueAtIndexOrDefault(gridLines[0].lineWidth, 0);
-				context.strokeStyle = helpers.getValueAtIndexOrDefault(gridLines[0].color, 0);
+				context.lineWidth = helpers.getValueAtIndexOrDefault(optsGridLines[0].lineWidth, 0);
+				context.strokeStyle = helpers.getValueAtIndexOrDefault(optsGridLines[0].color, 0);
 				var x1 = me.left,
 					x2 = me.right,
 					y1 = me.top,
@@ -629,11 +624,11 @@ module.exports = function(Chart) {
 
 				var aliasPixel = helpers.aliasPixel(context.lineWidth);
 				if (isHorizontal) {
-					y1 = y2 = options[0].position === 'top' ? me.bottom : me.top;
+					y1 = y2 = opts[0].position === 'top'? me.bottom: me.top;
 					y1 += aliasPixel;
 					y2 += aliasPixel;
 				} else {
-					x1 = x2 = options[0].position === 'left' ? me.right : me.left;
+					x1 = x2 = opts[0].position === 'left'? me.right: me.left;
 					x1 += aliasPixel;
 					x2 += aliasPixel;
 				}
@@ -645,101 +640,102 @@ module.exports = function(Chart) {
 			}
 		},
 
-		// 傾きの角度を求める
-		// Prevention of overlap Tick
+		// Prevention of overlap Ticks
 		calculateTickRotation: function() {
-
 			var me = this;
 			var context = me.ctx;
-			var tickOpts = [me.options.ticks, me.options.subScale.ticks, me.options.subScale.subScale.ticks];
-			// var gridLinesOpts = [me.options.gridLines, me.options.subScale.gridLines, me.options.subScale.subScale.gridLines];
+			var optsTick = [me.options.ticks, me.options.subScale.ticks, me.options.subScale.subScale.ticks];
+			var tickFont = me.parseFontOptions(optsTick[0]);
+			var labelRotation = me.labelRotation = optsTick[0].minRotation || 0;
+			if (!me.options.display) {
+				return;
+			}
 
-			// Get the width of each grid by calculating the difference
-			// between x offsets between 0 and 1.
-			var tickFont = me.parseFontOptions(tickOpts[0]);
-			// context.font = tickFont.font;
+			// ------
+			// calculate tick rotation
+			// ------
+			if (me.isHorizontal()) {
+				// horizontal
+				var originalLabelWidth = helpers.longestText(context, tickFont.font, me.displayTicks, me.longestTextCache);
+				var labelWidth = originalLabelWidth;
+				var cosRotation;
+				var sinRotation;
 
-			var labelRotation = tickOpts[0].minRotation || 0;
+				var tickFirst = me.displayTicks[0];
+				var tickSecond = me.displayTicks[1];
+				var tickSecondLast = me.displayTicks[me.displayTicks.length - 2];
+				var tickLast = me.displayTicks[me.displayTicks.length - 1];
 
-			if (me.options.display) {
+				var tickWidthLeft = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst) - 6;
+				var tickWidthRight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast) - 6;
 
-				if (me.isHorizontal()) {
-					// 水平時
-
-					// 表示されている目盛りから計算
-					var originalLabelWidth = helpers.longestText(context, tickFont.font, me.displayTicks, me.longestTextCache);
-					var labelWidth = originalLabelWidth;
-					var cosRotation;
-					var sinRotation;
-
-					// Allow 3 pixels x2 padding either side for label readability
-					// var tickWidthLeft = me.getPixelForTick(1) - me.getPixelForTick(0) - 6;
-					// var tickWidthRight = me.getPixelForTick(me.isDisplayTicks.length - 1) - me.getPixelForTick(me.isDisplayTicks.length - 2) - 6;
-					var tickWidthLeft = me.getPixelForValue(me.displayTicks[1]) - me.getPixelForValue(me.displayTicks[0]) - 6;
-					var tickWidthRight = me.getPixelForValue(me.displayTicks[me.displayTicks.length - 1]) - me.getPixelForValue(me.displayTicks[me.displayTicks.length - 2]) - 6;
-
-					var tickWidth = Math.min(tickWidthLeft, tickWidthRight);
-					// Max label rotation can be set or default to 90 - also act as a loop counter
-					while (labelWidth > tickWidth && labelRotation < tickOpts[0].maxRotation) {
-						var angleRadians = helpers.toRadians(labelRotation);
-						cosRotation = Math.cos(angleRadians);
-						sinRotation = Math.sin(angleRadians);
-
-						if (sinRotation * originalLabelWidth > me.maxHeight) {
-							// go back one step
-							labelRotation--;
-							break;
-						}
-
-						labelRotation++;
-						labelWidth = cosRotation * originalLabelWidth;
-					}
-
-					// saito 別関数にする。
-					// 重なり防止処理 横軸
-					// 最初と最後付近のラベル  saito
-					// min max 指定時の重なり防止
-					var pointer;
-					angleRadians = helpers.toRadians(labelRotation);
+				var tickWidth = Math.min(tickWidthLeft, tickWidthRight);
+				// Max label rotation can be set or default to 90 - also act as a loop counter
+				while (labelWidth > tickWidth && labelRotation < optsTick[0].maxRotation) {
+					var angleRadians = helpers.toRadians(labelRotation);
 					cosRotation = Math.cos(angleRadians);
-					labelWidth = cosRotation * context.measureText(me.displayTicks[1]).width;
-					if ((tickOpts[0].min !== undefined) && (tickWidthLeft < labelWidth)) {
-						pointer = me.ticks.indexOf(me.displayTicks[1].toString(10));
-						me.isDisplayTicks[pointer] = false;
-					}
-					labelWidth = cosRotation * context.measureText(me.displayTicks[me.isDisplayTicks.length - 1]).width;
-					if ((tickOpts[0].max !== undefined) && (tickWidthRight < labelWidth)) {
-						pointer = me.ticks.indexOf(me.displayTicks[me.displayTicks.length - 2].toString(10));
-						me.isDisplayTicks[pointer] = false;
+					sinRotation = Math.sin(angleRadians);
+
+					if (sinRotation * originalLabelWidth > me.maxHeight) {
+						// go back one step
+						labelRotation--;
+						break;
 					}
 
-				} else {
-					// saito 別関数にする。
-					// font size *1.2で縦サイズとする。
-					// Math.round(18px * 1.2) = 22
-					var tickHeight, labelHeight;
-					tickHeight = me.getPixelForValue(me.displayTicks[1]) - me.getPixelForValue(me.displayTicks[0]);
-					labelHeight = Math.round(tickFont.size * 1.2);
-					if (tickHeight < labelHeight) {
-						pointer = me.ticks.indexOf(me.displayTicks[1].toString(10));
-						me.isDisplayTicks[pointer] = false;
-					}
-					tickHeight = me.getPixelForValue(me.displayTicks[me.displayTicks.length - 1]) - me.getPixelForValue(me.displayTicks[me.displayTicks.length - 2]);
-					labelHeight = Math.round(tickFont.size * 1.2);
-					if (tickHeight < labelHeight) {
-						pointer = me.ticks.indexOf(me.displayTicks[me.displayTicks.length - 2].toString(10));
-						me.isDisplayTicks[pointer] = false;
-					}
-
+					labelRotation++;
+					labelWidth = cosRotation * originalLabelWidth;
 				}
 			}
 
-			me.labelRotation = labelRotation;
+			// ------
+			// Prevent overlap of edges
+			// Process when the scale on the edge overlaps
+			// ------
+			if (me.isHorizontal()) {
+				// horizontal
+
+				var pointer;
+				// var tickHeight, labelWidth;
+				angleRadians = helpers.toRadians(labelRotation);
+				cosRotation = Math.cos(angleRadians);
+
+				labelWidth = cosRotation * context.measureText(tickSecond).width;
+				if ((optsTick[0].min !== undefined) && (tickWidthLeft < labelWidth)) {
+					pointer = me.ticks.indexOf(tickSecond.toString(10));
+					me.isDisplayTicks[pointer] = false;
+				}
+				labelWidth = cosRotation * context.measureText(tickLast).width;
+				if ((optsTick[0].max !== undefined) && (tickWidthRight < labelWidth)) {
+					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
+					me.isDisplayTicks[pointer] = false;
+				}
+
+			} else {
+				// vertical
+
+				// Temporaly (font size)*1.2 = label height
+				// ex) Math.round(18px * 1.2) = 22
+				var tickHeight, labelHeight;
+				tickHeight = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst);
+				labelHeight = Math.round(tickFont.size * 1.2);
+				if (tickHeight < labelHeight) {
+					pointer = me.ticks.indexOf(tickSecond.toString(10));
+					me.isDisplayTicks[pointer] = false;
+				}
+				tickHeight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast);
+				labelHeight = Math.round(tickFont.size * 1.2);
+				if (tickHeight < labelHeight) {
+					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
+					me.isDisplayTicks[pointer] = false;
+				}
+
+			}
+			// ------
 		},
 
 
 	});
 
+	// regist fine scale
 	Chart.scaleService.registerScaleType('fineLinear', fineLinearScale, defaultConfig);
-
 };

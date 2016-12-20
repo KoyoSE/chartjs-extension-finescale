@@ -1,11 +1,11 @@
-describe('fineLinear Scale', function () {
-	it('Should register the constructor with the scale service', function () {
+describe('fineLinear Scale', function() {
+	it('Should register the constructor with the scale service', function() {
 		var Constructor = Chart.scaleService.getScaleConstructor('fineLinear');
 		expect(Constructor).not.toBe(undefined);
 		expect(typeof Constructor).toBe('function');
 	});
 
-	it('Should have the correct default config', function () {
+	it('Should have the correct default config', function() {
 		var defaultConfig = Chart.scaleService.getScaleDefaults('fineLinear');
 		expect(defaultConfig).toEqual(
 			{
@@ -41,7 +41,6 @@ describe('fineLinear Scale', function () {
 					autoSkipPadding: 0,
 					labelOffset: 0,
 					callback: defaultConfig.ticks.callback,
-					fontSize: 12
 				}),
 				subScale: ({
 					display: true,
@@ -71,7 +70,7 @@ describe('fineLinear Scale', function () {
 		expect(defaultConfig.ticks.callback).toEqual(jasmine.any(Function));
 	});
 
-	it('Should correctly determine the max & min data values', function () {
+	it('Should correctly determine the max & min data values', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -102,10 +101,10 @@ describe('fineLinear Scale', function () {
 
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
 		expect(chart.scales.yScale0.min).toBe(-100);
-		expect(chart.scales.yScale0.max).toBe(150);
+		expect(chart.scales.yScale0.max).toBe(200);
 	});
 
-	it('Should correctly determine the max & min of string data values', function () {
+	it('Should correctly determine the max & min of string data values', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -136,10 +135,10 @@ describe('fineLinear Scale', function () {
 
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
 		expect(chart.scales.yScale0.min).toBe(-100);
-		expect(chart.scales.yScale0.max).toBe(150);
+		expect(chart.scales.yScale0.max).toBe(200);
 	});
 
-	it('Should correctly determine the max & min data values ignoring hidden datasets', function () {
+	it('Should correctly determine the max & min data values ignoring hidden datasets', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -171,10 +170,10 @@ describe('fineLinear Scale', function () {
 
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
 		expect(chart.scales.yScale0.min).toBe(-100);
-		expect(chart.scales.yScale0.max).toBe(80);
+		expect(chart.scales.yScale0.max).toBe(100);
 	});
 
-	it('Should correctly determine the max & min data values ignoring data that is NaN', function () {
+	it('Should correctly determine the max & min data values ignoring data that is NaN', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -194,18 +193,18 @@ describe('fineLinear Scale', function () {
 			}
 		});
 
-		expect(chart.scales.yScale0.min).toBe(30);
-		expect(chart.scales.yScale0.max).toBe(90);
+		expect(chart.scales.yScale0.min).toBe(0);
+		expect(chart.scales.yScale0.max).toBe(100);
 
 		// Scale is now stacked
 		chart.scales.yScale0.options.stacked = true;
 		chart.update();
 
 		expect(chart.scales.yScale0.min).toBe(0);
-		expect(chart.scales.yScale0.max).toBe(90);
+		expect(chart.scales.yScale0.max).toBe(100);
 	});
 
-	it('Should correctly determine the max & min for scatter data', function () {
+	it('Should correctly determine the max & min for scatter data', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
@@ -243,13 +242,13 @@ describe('fineLinear Scale', function () {
 		});
 		chart.update();
 
-		expect(chart.scales.xScale0.min).toBe(-20);
+		expect(chart.scales.xScale0.min).toBe(-100);
 		expect(chart.scales.xScale0.max).toBe(100);
 		expect(chart.scales.yScale0.min).toBe(0);
 		expect(chart.scales.yScale0.max).toBe(100);
 	});
 
-	it('Should correctly get the label for the given index', function () {
+	it('Should correctly get the label for the given index', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
@@ -290,7 +289,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.getLabelForIndex(3, 0)).toBe(7);
 	});
 
-	it('Should correctly determine the min and max data values when stacked mode is turned on', function () {
+	it('Should correctly determine the min and max data values when stacked mode is turned on', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
@@ -327,11 +326,11 @@ describe('fineLinear Scale', function () {
 		});
 		chart.update();
 
-		expect(chart.scales.yScale0.min).toBe(-150);
+		expect(chart.scales.yScale0.min).toBe(-200);
 		expect(chart.scales.yScale0.max).toBe(200);
 	});
 
-	it('Should correctly determine the min and max data values when stacked mode is turned on and there are hidden datasets', function () {
+	it('Should correctly determine the min and max data values when stacked mode is turned on and there are hidden datasets', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -366,11 +365,11 @@ describe('fineLinear Scale', function () {
 		});
 		chart.update();
 
-		expect(chart.scales.yScale0.min).toBe(-150);
+		expect(chart.scales.yScale0.min).toBe(-200);
 		expect(chart.scales.yScale0.max).toBe(200);
 	});
 
-	it('Should correctly determine the min and max data values when stacked mode is turned on there are multiple types of datasets', function () {
+	it('Should correctly determine the min and max data values when stacked mode is turned on there are multiple types of datasets', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -403,7 +402,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.max).toBe(160);
 	});
 
-	it('Should ensure that the scale has a max and min that are not equal', function () {
+	it('Should ensure that the scale has a max and min that are not equal', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -425,7 +424,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.max).toBe(1);
 	});
 
-	it('Should ensure that the scale has a max and min that are not equal when beginAtZero is set', function () {
+	it('Should ensure that the scale has a max and min that are not equal when beginAtZero is set', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -450,7 +449,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.max).toBe(1);
 	});
 
-	it('Should use the suggestedMin and suggestedMax options', function () {
+	it('Should use the suggestedMin and suggestedMax options', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -479,7 +478,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.max).toBe(10);
 	});
 
-	it('Should use the min and max options', function () {
+	it('Should use the min and max options', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -510,7 +509,7 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0.ticks[chart.scales.yScale0.ticks.length - 1]).toBe('-1010');
 	});
 
-	it('Should use min, max and stepSize to create fixed spaced ticks', function () {
+	it('Should use min, max and stepSize to create fixed spaced ticks', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -538,11 +537,11 @@ describe('fineLinear Scale', function () {
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
 		expect(chart.scales.yScale0.min).toBe(1);
 		expect(chart.scales.yScale0.max).toBe(11);
-		expect(chart.scales.yScale0.ticks).toEqual(['11', '9', '7', '5', '3', '1']);
+		expect(chart.scales.yScale0.ticks).toEqual(['11', '10', '8', '6', '4', '2', '1']);
 	});
 
 
-	it('should forcibly include 0 in the range if the beginAtZero option is used', function () {
+	it('should forcibly include 0 in the range if the beginAtZero option is used', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -563,22 +562,22 @@ describe('fineLinear Scale', function () {
 		});
 
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
-		expect(chart.scales.yScale0.ticks).toEqual(['50', '45', '40', '35', '30', '25', '20']);
+		expect(chart.scales.yScale0.ticks).toEqual(['50', '49', '48', '47', '46', '45', '44', '43', '42', '41', '40', '39', '38', '37', '36', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '25', '24', '23', '22', '21', '20']);
 
 		chart.scales.yScale0.options.ticks.beginAtZero = true;
 		chart.update();
-		expect(chart.scales.yScale0.ticks).toEqual(['50', '45', '40', '35', '30', '25', '20', '15', '10', '5', '0']);
+		expect(chart.scales.yScale0.ticks).toEqual(['50', '49', '48', '47', '46', '45', '44', '43', '42', '41', '40', '39', '38', '37', '36', '35', '34', '33', '32', '31', '30', '29', '28', '27', '26', '25', '24', '23', '22', '21', '20', '19', '18', '17', '16', '15', '14', '13', '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', '0']);
 
 		chart.data.datasets[0].data = [-20, -30, -40, -50];
 		chart.update();
-		expect(chart.scales.yScale0.ticks).toEqual(['0', '-5', '-10', '-15', '-20', '-25', '-30', '-35', '-40', '-45', '-50']);
+		expect(chart.scales.yScale0.ticks).toEqual(['0', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '-10', '-11', '-12', '-13', '-14', '-15', '-16', '-17', '-18', '-19', '-20', '-21', '-22', '-23', '-24', '-25', '-26', '-27', '-28', '-29', '-30', '-31', '-32', '-33', '-34', '-35', '-36', '-37', '-38', '-39', '-40', '-41', '-42', '-43', '-44', '-45', '-46', '-47', '-48', '-49', '-50']);
 
 		chart.scales.yScale0.options.ticks.beginAtZero = false;
 		chart.update();
-		expect(chart.scales.yScale0.ticks).toEqual(['-20', '-25', '-30', '-35', '-40', '-45', '-50']);
+		expect(chart.scales.yScale0.ticks).toEqual(['-20', '-21', '-22', '-23', '-24', '-25', '-26', '-27', '-28', '-29', '-30', '-31', '-32', '-33', '-34', '-35', '-36', '-37', '-38', '-39', '-40', '-41', '-42', '-43', '-44', '-45', '-46', '-47', '-48', '-49', '-50']);
 	});
 
-	it('Should generate tick marks in the correct order in reversed mode', function () {
+	it('Should generate tick marks in the correct order in reversed mode', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -601,12 +600,12 @@ describe('fineLinear Scale', function () {
 			}
 		});
 
-		expect(chart.scales.yScale0.ticks).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80']);
-		expect(chart.scales.yScale0.start).toBe(80);
+		expect(chart.scales.yScale0.ticks).toEqual(['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55', '60', '65', '70', '75', '80', '85', '90', '95', '100']);
+		expect(chart.scales.yScale0.start).toBe(100);
 		expect(chart.scales.yScale0.end).toBe(0);
 	});
 
-	it('should use the correct number of decimal places in the default format function', function () {
+	it('should use the correct number of decimal places in the default format function', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -625,10 +624,10 @@ describe('fineLinear Scale', function () {
 				}
 			}
 		});
-		expect(chart.scales.yScale0.ticks).toEqual(['0.06', '0.05', '0.04', '0.03', '0.02', '0.01', '0']);
+		expect(chart.scales.yScale0.ticks).toEqual(['0.1', '0.095', '0.09', '0.085', '0.08', '0.075', '0.07', '0.065', '0.06', '0.055', '0.05', '0.045', '0.04', '0.035', '0.03', '0.025', '0.02', '0.015', '0.01', '0.005', '0']);
 	});
 
-	it('Should build labels using the user supplied callback', function () {
+	it('Should build labels using the user supplied callback', function() {
 		var chart = window.acquireChart({
 			type: 'bar',
 			data: {
@@ -644,7 +643,7 @@ describe('fineLinear Scale', function () {
 						id: 'yScale0',
 						type: 'fineLinear',
 						ticks: {
-							callback: function (value, index) {
+							callback: function(value, index) {
 								return index.toString();
 							}
 						}
@@ -654,10 +653,10 @@ describe('fineLinear Scale', function () {
 		});
 
 		// Just the index
-		expect(chart.scales.yScale0.ticks).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8']);
+		expect(chart.scales.yScale0.ticks).toEqual(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']);
 	});
 
-	it('Should get the correct pixel value for a point', function () {
+	it('Should get the correct pixel value for a point', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
@@ -683,13 +682,13 @@ describe('fineLinear Scale', function () {
 		});
 
 		var xScale = chart.scales.xScale0;
-		expect(xScale.getPixelForValue(1, 0, 0)).toBeCloseToPixel(501); // right - paddingRight
+		expect(xScale.getPixelForValue(1, 0, 0)).toBeCloseToPixel(506); // right - paddingRight
 		expect(xScale.getPixelForValue(-1, 0, 0)).toBeCloseToPixel(31); // left + paddingLeft
-		expect(xScale.getPixelForValue(0, 0, 0)).toBeCloseToPixel(266); // halfway*/
+		expect(xScale.getPixelForValue(0, 0, 0)).toBeCloseToPixel(268); // halfway*/
 
-		expect(xScale.getValueForPixel(501)).toBeCloseTo(1, 1e-2);
+		expect(xScale.getValueForPixel(506)).toBeCloseTo(1, 1e-2);
 		expect(xScale.getValueForPixel(31)).toBeCloseTo(-1, 1e-2);
-		expect(xScale.getValueForPixel(266)).toBeCloseTo(0, 1e-2);
+		expect(xScale.getValueForPixel(268)).toBeCloseTo(0, 1e-2);
 
 		var yScale = chart.scales.yScale0;
 		expect(yScale.getPixelForValue(1, 0, 0)).toBeCloseToPixel(32); // right - paddingRight
@@ -701,7 +700,7 @@ describe('fineLinear Scale', function () {
 		expect(yScale.getValueForPixel(258)).toBe(0);
 	});
 
-	it('should fit correctly', function () {
+	it('should fit correctly', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
@@ -774,7 +773,7 @@ describe('fineLinear Scale', function () {
 		expect(yScale.height).toBeCloseToPixel(434);
 	});
 
-	it('should fit correctly when display is turned off', function () {
+	it('should fit correctly when display is turned off', function() {
 		var chart = window.acquireChart({
 			type: 'line',
 			data: {
