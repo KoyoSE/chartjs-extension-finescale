@@ -102,6 +102,7 @@ module.exports = function(Chart) {
 			// process of stepSize option
 			if (generationOptions.stepSize && generationOptions.stepSize > 0) {
 				// The maximum number of ticks is 1000.
+				// This is for performance.
 				var gStepSize = generationOptions.stepSize;
 				while ((dataRange.max - dataRange.min) / gStepSize > 1000) {
 					gStepSize *= 10;
@@ -667,6 +668,11 @@ module.exports = function(Chart) {
 				return;
 			}
 
+			var tickFirst = me.displayTicks[0];
+			var tickSecond = me.displayTicks[1];
+			var tickSecondLast = me.displayTicks[me.displayTicks.length - 2];
+			var tickLast = me.displayTicks[me.displayTicks.length - 1];
+
 			// ------
 			// calculate tick rotation
 			// ------
@@ -676,11 +682,6 @@ module.exports = function(Chart) {
 				var labelWidth = originalLabelWidth;
 				var cosRotation;
 				var sinRotation;
-
-				var tickFirst = me.displayTicks[0];
-				var tickSecond = me.displayTicks[1];
-				var tickSecondLast = me.displayTicks[me.displayTicks.length - 2];
-				var tickLast = me.displayTicks[me.displayTicks.length - 1];
 
 				var tickWidthLeft = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst) - 6;
 				var tickWidthRight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast) - 6;
