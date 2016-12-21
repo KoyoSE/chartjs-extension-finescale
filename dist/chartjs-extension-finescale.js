@@ -65,8 +65,8 @@ module.exports = function(Chart) {
 		niceNum: function(range, round) {
 			var exponent = Math.floor(helpers.log10(range));
 			var fraction = range / Math.pow(10, exponent);
-			var niceFraction;
 
+			var niceFraction;
 			if (round) {
 				niceFraction = fraction <= 1? 5: (fraction <= 5? 10: 20);
 			} else {
@@ -736,12 +736,12 @@ module.exports = function(Chart) {
 				labelHeight = Math.round(tickFont.size * 1.2);
 
 				tickHeight = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst);
-				if (tickHeight < labelHeight) {
+				if ((optsTick[0].min !== undefined) && (tickHeight < labelHeight)) {
 					pointer = me.ticks.indexOf(tickSecond.toString(10));
 					me.isDisplayTicks[pointer] = false;
 				}
 				tickHeight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast);
-				if (tickHeight < labelHeight) {
+				if ((optsTick[0].max !== undefined) && (tickHeight < labelHeight)) {
 					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
 					me.isDisplayTicks[pointer] = false;
 				}
