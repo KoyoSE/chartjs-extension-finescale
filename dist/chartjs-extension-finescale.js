@@ -599,7 +599,7 @@ module.exports = function(Chart) {
 
 			// ------
 
-			// display schale label
+			// display scale label
 			if (optsScaleLabel[0].display) {
 				// Draw the scale label
 				var scaleLabelX;
