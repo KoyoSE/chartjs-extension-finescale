@@ -48,8 +48,8 @@ module.exports = function(Chart) {
 		niceNum: function(range, round) {
 			var exponent = Math.floor(helpers.log10(range));
 			var fraction = range / Math.pow(10, exponent);
-			var niceFraction;
 
+			var niceFraction;
 			if (round) {
 				niceFraction = fraction <= 1? 5: (fraction <= 5? 10: 20);
 			} else {
@@ -641,6 +641,7 @@ module.exports = function(Chart) {
 		},
 
 		// Prevention of overlap Ticks
+		// The function name 'calculateTickRotation' is not appropriate, but it is not changed for compatibility.
 		calculateTickRotation: function() {
 			var me = this;
 			var context = me.ctx;
@@ -656,10 +657,10 @@ module.exports = function(Chart) {
 			var tickSecondLast = me.displayTicks[me.displayTicks.length - 2];
 			var tickLast = me.displayTicks[me.displayTicks.length - 1];
 
-			// ------
-			// calculate tick rotation
-			// ------
 			if (me.isHorizontal()) {
+				// ------
+				// calculate tick rotation
+				// ------
 				// horizontal
 				var originalLabelWidth = helpers.longestText(context, tickFont.font, me.displayTicks, me.longestTextCache);
 				var labelWidth = originalLabelWidth;
@@ -685,15 +686,11 @@ module.exports = function(Chart) {
 					labelRotation++;
 					labelWidth = cosRotation * originalLabelWidth;
 				}
-			}
 
-			// ------
-			// Prevent overlap of edges
-			// Process when the scale on the edge overlaps
-			// ------
-			if (me.isHorizontal()) {
+				// ------
+				// Prevent overlap ticks of max,min
+				// ------
 				// horizontal
-
 				var pointer;
 				// var tickHeight, labelWidth;
 				angleRadians = helpers.toRadians(labelRotation);
@@ -711,20 +708,23 @@ module.exports = function(Chart) {
 				}
 
 			} else {
+				// ------
+				// Prevent overlap ticks of max,min
+				// ------
 				// vertical
 
+				var tickHeight, labelHeight;
 				// Temporaly (font size)*1.2 = label height
 				// ex) Math.round(18px * 1.2) = 22
-				var tickHeight, labelHeight;
-				tickHeight = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst);
 				labelHeight = Math.round(tickFont.size * 1.2);
-				if (tickHeight < labelHeight) {
+
+				tickHeight = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst);
+				if ((optsTick[0].min !== undefined) && (tickHeight < labelHeight)) {
 					pointer = me.ticks.indexOf(tickSecond.toString(10));
 					me.isDisplayTicks[pointer] = false;
 				}
 				tickHeight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast);
-				labelHeight = Math.round(tickFont.size * 1.2);
-				if (tickHeight < labelHeight) {
+				if ((optsTick[0].max !== undefined) && (tickHeight < labelHeight)) {
 					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
 					me.isDisplayTicks[pointer] = false;
 				}
@@ -736,6 +736,6 @@ module.exports = function(Chart) {
 
 	});
 
-	// regist fine scale
+	// regist fineLinear
 	Chart.scaleService.registerScaleType('fineLinear', fineLinearScale, defaultConfig);
 };

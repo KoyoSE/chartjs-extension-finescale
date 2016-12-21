@@ -43,22 +43,6 @@ var testFiles = [
 	'./test/*.js'
 ];
 
-gulp.task('build', buildTask);
-gulp.task('coverage', coverageTask);
-gulp.task('watch', watchTask);
-gulp.task('lint', lintTask);
-gulp.task('test', ['lint', 'validHTML', 'unittest']);
-gulp.task('size', ['library-size', 'module-sizes']);
-gulp.task('server', serverTask);
-gulp.task('validHTML', validHTMLTask);
-gulp.task('unittest', unittestTask);
-gulp.task('unittestWatch', unittestWatchTask);
-gulp.task('library-size', librarySizeTask);
-gulp.task('module-sizes', moduleSizesTask);
-gulp.task('_open', _openTask);
-gulp.task('dev', ['server', 'default']);
-gulp.task('default', ['build', 'watch']);
-
 /**
  * Generates the bower.json manifest file which will be pushed along release tags.
  * Specs: https://github.com/bower/spec/blob/master/json.md
@@ -196,3 +180,22 @@ function _openTask() {
 	exec('open http://localhost:8000');
 	exec('subl .');
 }
+
+
+// -----------------------
+gulp.task('build', buildTask);
+gulp.task('coverage', coverageTask);
+gulp.task('watch', watchTask);
+gulp.task('lint', lintTask);
+gulp.task('test', ['lint', 'validHTML', 'unittest']);
+gulp.task('size', ['library-size', 'module-sizes']);
+gulp.task('server', serverTask);
+gulp.task('validHTML', validHTMLTask);
+gulp.task('unittest', unittestTask);
+gulp.task('unittestWatch', unittestWatchTask);
+gulp.task('library-size', librarySizeTask);
+gulp.task('module-sizes', moduleSizesTask);
+gulp.task('_open', _openTask);
+gulp.task('dev', ['server', 'default']);
+gulp.task('default', ['build', 'watch']);
+// -----------------------
