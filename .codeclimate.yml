@@ -17,6 +17,5 @@ exclude_paths:
 - node_modules/**/*
 - test/**/*
 - coverage/**/*
-exclude_fingerprints:
-    # Diable check 'Chart' is not defined. 
-    - 3facb0c8f4946ffe73740b559f75eb35  
+exclude_fingerprints: 
+    - 3facb0c8f4946ffe73740b559f75eb35  # Diable check 'Chart' is not defined.
