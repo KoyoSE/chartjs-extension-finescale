@@ -7,6 +7,8 @@ engines:
   eslint:
     enabled: true
     channel: "eslint-3"
+    exclude_fingerprints: 
+    - 3facb0c8f4946ffe73740b559f75eb35  # Diable check 'Chart' is not defined.
   fixme:
     enabled: true
 ratings:
@@ -17,5 +19,3 @@ exclude_paths:
 - node_modules/**/*
 - test/**/*
 - coverage/**/*
-exclude_fingerprints: 
-    - 3facb0c8f4946ffe73740b559f75eb35  # Diable check 'Chart' is not defined.
