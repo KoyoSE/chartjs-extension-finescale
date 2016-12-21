@@ -13,7 +13,6 @@
     "url": "https://github.com/KoyoSE/chartjs-extension-finescale/issues"
   },
   "homepage": "https://github.com/KoyoSE/chartjs-extension-finescale#readme",
-
   "devDependencies": {
     "browserify": "^13.0.0",
     "browserify-istanbul": "^0.2.1",
@@ -47,7 +46,8 @@
     "watchify": "^3.7.0",
     "yargs": "^5.0.0"
   },
-   "dependencies": {
-    "chart.js": "^2.1.5"
+  "dependencies": {
+    "chart.js": "^2.1.5",
+    "moment": "^2.17.1"
   }
 }

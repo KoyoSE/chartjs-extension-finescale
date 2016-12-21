@@ -36,7 +36,8 @@ var header = '/* !\n' +
 	' */\n';
 
 var preTestFiles = [
-	'./node_modules/chart.js/dist/Chart.bundle.js'
+	'./node_modules/chart.js/dist/Chart.bundle.js',
+	'./node_modules/moment/min/moment.min.js'
 ];
 
 var testFiles = [
