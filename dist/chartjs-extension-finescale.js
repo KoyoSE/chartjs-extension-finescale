@@ -573,6 +573,8 @@ module.exports = function(Chart) {
 					labelRotation++;
 					labelWidth = cosRotation * originalLabelWidth;
 				}
+				me.labelRotation = labelRotation;
+
 
 				// ------
 				// Prevent overlap ticks of max,min
