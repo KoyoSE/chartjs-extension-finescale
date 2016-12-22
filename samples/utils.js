@@ -13,12 +13,17 @@ window.randomScalingFactor = function() {
 };
 
 var clone = function(obj) {
-	var c = new(obj.constructor)();
+	var c = new (obj.constructor)();
 	for (var p in obj) {
 		if (!obj.hasOwnProperty(p)) {
 			continue;
 		}
-		c[p] = typeof obj[p]=== 'object'? this.clone(obj[p]): obj[p];
+		// c[p] = typeof obj[p]=== 'object'? this.clone(obj[p]): obj[p];
+		if (typeof obj[p] === 'object') {
+			c[p] = this.clone(obj[p]);
+		} else {
+			c[p] = obj[p];
+		}
 	}
 	return c;
 };

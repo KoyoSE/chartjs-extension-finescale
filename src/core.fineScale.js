@@ -10,6 +10,113 @@ module.exports = function(Chart) {
 		// core.helpers.js Replacement
 		// ----------------------
 
+		// getOptionsAry: function() {
+
+		// 	var me = this;
+		// 	var opts = [
+		// 		me.options,
+		// 		me.options.subScale? me.options.subScale: me.options,
+		// 		me.options.subScale.subScale? me.options.subScale.subScale: me.options
+		// 	];
+		// 	return opts;
+
+		// },
+
+
+		update: function(maxWidth, maxHeight, margins) {
+			var me = this;
+
+			// Update Lifecycle - Probably don't want to ever extend or overwrite this function ;)
+			me.beforeUpdate();
+
+			// Absorb the master measurements
+			me.maxWidth = maxWidth;
+			me.maxHeight = maxHeight;
+			me.margins = helpers.extend({
+				left: 0,
+				right: 0,
+				top: 0,
+				bottom: 0
+			}, margins);
+			me.longestTextCache = me.longestTextCache || {};
+
+			// Dimensions
+			me.beforeSetDimensions();
+			me.setDimensions();
+			me.afterSetDimensions();
+
+			// Data min/max
+			me.beforeDataLimits();
+			me.determineDataLimits();
+			me.afterDataLimits();
+
+			// Ticks
+			me.beforeBuildTicks();
+			me.buildTicks();
+			me.generateTickDisplayPrameters();
+			me.afterBuildTicks();
+
+			me.beforeTickToLabelConversion();
+			me.convertTicksToLabels();
+			me.afterTickToLabelConversion();
+
+			// Tick Rotation
+			me.beforeCalculateTickRotation();
+			me.calculateTickRotation();
+			me.afterCalculateTickRotation();
+			// Fit
+			me.beforeFit();
+			me.fit();
+			me.afterFit();
+			//
+			me.afterUpdate();
+
+			return me.minSize;
+
+		},
+
+		// Generate ticks display parameters
+		generateTickDisplayPrameters: function() {
+
+			var me = this;
+			var opts = [
+				me.options,
+				me.options.subScale,
+				me.options.subScale.subScale
+			];
+			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
+
+			if (!me.ticks) {
+				me.ticks = [];
+			}
+
+			if ((!me.tickLevels) || (me.ticks.length !== me.tickLevels.length)) {
+				me.tickLevels = [];
+				for (var index = 0; index < me.ticks.length; index++) {
+					// default tick level = 0;
+					me.tickLevels.push(0);
+				}
+			}
+
+			var isDisplayTicks = [];
+			var displayTicks = [];
+			// Setting display flag for each tick.
+			// and setting display ticks array.
+			var isDisplay;
+			for (index = 0; index < me.ticks.length; index++) {
+				// Forced display of the first and last ticks.
+				isDisplay = index !== 0? (index !== me.ticks.length - 1? !!optsTick[me.tickLevels[index]].display: true): true;
+				isDisplayTicks.push(isDisplay);
+				if (isDisplay) {
+					displayTicks.push(me.ticks[index]);
+				}
+			}
+
+			me.isDisplayTicks = isDisplayTicks;
+			me.displayTicks = displayTicks;
+
+		},
+
 		// niceNum for fineScale
 		niceNum: function(range, round) {
 			var exponent = Math.floor(helpers.log10(range));
@@ -54,19 +161,22 @@ module.exports = function(Chart) {
 		// @param {rectangle} chartArea: the area of the chart to draw full grid lines on
 		draw: function(chartArea) {
 			var me = this;
-			var opts = [me.options, me.options.subScale, me.options.subScale.subScale];
+			// options
+			var opts = [
+				me.options,
+				me.options.subScale,
+				me.options.subScale.subScale
+			];
 			if (!opts[0].display) {
 				return;
 			}
-
-			// canvas
-			var context = me.ctx;
-
-			// options
 			var globalDefaults = Chart.defaults.global;
 			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
 			var optsGridLines = [opts[0].gridLines, opts[1].gridLines, opts[2].gridLines];
 			var optsScaleLabel = [opts[0].scaleLabel, opts[1].scaleLabel, opts[2].scaleLabel];
+
+			// canvas
+			var context = me.ctx;
 
 			// figure out the maximum number of gridlines to show
 			var maxTicks;

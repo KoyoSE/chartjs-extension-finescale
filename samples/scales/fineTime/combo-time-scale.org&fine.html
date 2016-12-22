@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>Line Chart - Combo Time Scale</title>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+	<script src="../../../node_modules/chart.js/dist/Chart.js"></script>
+	<script src="../../../dist/chartjs-extension-finescale.js"></script>
+	<script src="../../utils.js"></script>
+	<style>
+    canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+	</style>
+</head>
+
+<body>
+
+<div style="width:75%;">
+<canvas id="canvas1"></canvas>
+</div>
+<div style="width:75%;">
+<canvas id="canvas2"></canvas>
+</div>
+<div style="width:75%;">
+<canvas id="canvas3"></canvas>
+</div>
+<br>
+<br>
+<button id="randomizeData">Randomize Data</button>
+<script>
+		var timeFormat = 'MM/DD/YYYY HH:mm';
+
+		function newDateString(days) {
+			return moment().add(days, 'd').format(timeFormat);
+		}
+
+		var color = Chart.helpers.color;
+		var data = {
+			labels: [
+				newDateString(0),
+				newDateString(1),
+				newDateString(2),
+				newDateString(3),
+				newDateString(4),
+				newDateString(5),
+				newDateString(6)
+			],
+			datasets: [{
+				type: 'bar',
+				label: 'Dataset 1',
+				backgroundColor: color(window.chartColors.red).alpha(0.5).rgbString(),
+				borderColor: window.chartColors.red,
+				data: [
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor()
+				],
+			}, {
+				type: 'bar',
+				label: 'Dataset 2',
+				backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
+				borderColor: window.chartColors.blue,
+				data: [
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor()
+				],
+			}, {
+				type: 'line',
+				label: 'Dataset 3',
+				backgroundColor: color(window.chartColors.green).alpha(0.5).rgbString(),
+				borderColor: window.chartColors.green,
+				fill: false,
+				data: [
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor(),
+					randomScalingFactor()
+				],
+			},]
+		};
+
+		var config = {
+			type: 'bar',
+			data: data,
+			options: {
+				title: {
+					text: "linear scale (original)",
+					display: true
+				},
+				scales: {
+					xAxes: [{
+						// ------- fineTime ----------
+						// type: "fineTime", //for future
+						type: "time",
+						// -----------------------------
+						scaleLabel: {
+							display: true,
+							labelString: 'time',
+						},
+						display: true,
+						time: {
+							format: timeFormat,
+							// round: 'day'
+						}
+					}],
+					yAxes: [{
+						// ------- fineLinear ----------
+						type: "linear",
+						// type: "fineLinear",
+						// type: "fineLinearCompatibilityMode",
+						// -----------------------------
+						scaleLabel: {
+							display: true,
+							labelString: 'linear',
+						},
+						ticks: {
+							min: 0,
+							max: 275,
+							stepSize: 25
+						}
+					}]
+				},
+			}
+		};
+
+		var fineCompConfig = clone(config);
+		fineCompConfig.options.title.text = "linear scale with fineLinear draw method";		
+		fineCompConfig.options.scales.yAxes[0].type = "fineLinearCompatibilityMode";
+		fineCompConfig.options.scales.yAxes[0].scaleLabel.labelString = 'Fine scale - Compatible mode';
+
+		var fineConfig = clone(config);
+		fineConfig.options.title.text = "fineLinear scale";		
+		fineConfig.options.scales.yAxes[0].type = "fineLinear";
+		fineConfig.options.scales.yAxes[0].scaleLabel.labelString = 'Fine scale - fineLinear';
+
+		window.onload = function () {
+			var ctx1 = document.getElementById("canvas1").getContext("2d");
+			window.myLine1 = new Chart(ctx1, config);
+
+			var ctx2 = document.getElementById("canvas2").getContext("2d");
+			window.myLine2 = new Chart(ctx2, fineCompConfig);
+
+			var ctx3 = document.getElementById("canvas3").getContext("2d");
+			window.myLine3 = new Chart(ctx3, fineConfig);
+		};
+
+		document.getElementById('randomizeData').addEventListener('click', function () {
+			config.data.datasets.forEach(function (dataset) {
+				dataset.data = dataset.data.map(function () {
+					return randomScalingFactor();
+				});
+			});
+			fineCompConfig.data.datasets.forEach(function (dataset) {
+				dataset.data = dataset.data.map(function () {
+					return randomScalingFactor();
+				});
+			});
+			fineConfig.data.datasets.forEach(function (dataset) {
+				dataset.data = dataset.data.map(function () {
+					return randomScalingFactor();
+				});
+			});
+
+			window.myLine1.update();
+			window.myLine2.update();
+			window.myLine3.update();
+		});
+
+	</script>
+</body>
+
+</html>

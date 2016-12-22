@@ -147,25 +147,25 @@ module.exports = function(Chart) {
 
 			// -------
 
-			// Setting display flag for each tick.
-			// and setting display ticks array.
-			var isDisplay;
-			for (index = 0; index < ticks.length; index++) {
-				// Forced display of the first and last ticks.
-				isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
-				isDisplayTicks.push(isDisplay);
-				if (isDisplay) {
-					displayTicks.push(ticks[index]);
-				}
-			}
+			// // Setting display flag for each tick.
+			// // and setting display ticks array.
+			// var isDisplay;
+			// for (index = 0; index < ticks.length; index++) {
+			// 	// Forced display of the first and last ticks.
+			// 	isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
+			// 	isDisplayTicks.push(isDisplay);
+			// 	if (isDisplay) {
+			// 		displayTicks.push(ticks[index]);
+			// 	}
+			// }
 
 			return {
 				ticks: ticks,
 				levels: levels,
 				min: startTick,
 				max: endTick,
-				isDisplayTicks: isDisplayTicks,
-				displayTicks: displayTicks
+				// isDisplayTicks: isDisplayTicks,
+				// displayTicks: displayTicks
 			};
 		},
 
@@ -177,8 +177,8 @@ module.exports = function(Chart) {
 			var me = this;
 			me.ticks.reverse();
 			me.tickLevels.reverse();
-			me.isDisplayTicks.reverse();
-			me.displayTicks.reverse();
+			// me.isDisplayTicks.reverse();
+			// me.displayTicks.reverse();
 		},
 
 		handleDirectionalChanges: function() {
@@ -216,9 +216,8 @@ module.exports = function(Chart) {
 			var opts = me.options;
 			var optsTick = [opts.ticks, opts.subScale.ticks, opts.subScale.subScale.ticks];
 
-			var maxTicks = me.getTickLimit();
 			var numericGeneratorOptions = {
-				maxTicks: maxTicks,
+				maxTicks: me.getTickLimit(),
 				min: optsTick[0].min,
 				max: optsTick[0].max,
 				stepSize: helpers.getValueOrDefault(optsTick[0].fixedStepSize, optsTick[0].stepSize),
@@ -228,15 +227,13 @@ module.exports = function(Chart) {
 			var fineLinear = me.fineLinear(numericGeneratorOptions, me);
 			me.ticks = fineLinear.ticks;
 			me.tickLevels = fineLinear.levels;
-			me.isDisplayTicks = fineLinear.isDisplayTicks;
-			me.displayTicks = fineLinear.displayTicks;
-
-			me.handleDirectionalChanges();
-
+			// me.isDisplayTicks = fineLinear.isDisplayTicks;
+			// me.displayTicks = fineLinear.displayTicks;
 			// At this point, we need to update our max and min given the tick values
 			// since we have expanded the range of the scale
 			me.max = fineLinear.max;
 			me.min = fineLinear.min;
+			me.handleDirectionalChanges();
 
 			// Handling the reverse option.
 			if (optsTick[0].reverse) {

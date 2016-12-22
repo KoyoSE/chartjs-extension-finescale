@@ -14,9 +14,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 require(2)(Chart);
 require(3)(Chart);
+require(5)(Chart);
 require(4)(Chart);
 
-},{"2":2,"3":3,"4":4}],2:[function(require,module,exports){
+},{"2":2,"3":3,"4":4,"5":5}],2:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {
@@ -28,6 +29,113 @@ module.exports = function(Chart) {
 		// ----------------------
 		// core.helpers.js Replacement
 		// ----------------------
+
+		// getOptionsAry: function() {
+
+		// 	var me = this;
+		// 	var opts = [
+		// 		me.options,
+		// 		me.options.subScale? me.options.subScale: me.options,
+		// 		me.options.subScale.subScale? me.options.subScale.subScale: me.options
+		// 	];
+		// 	return opts;
+
+		// },
+
+
+		update: function(maxWidth, maxHeight, margins) {
+			var me = this;
+
+			// Update Lifecycle - Probably don't want to ever extend or overwrite this function ;)
+			me.beforeUpdate();
+
+			// Absorb the master measurements
+			me.maxWidth = maxWidth;
+			me.maxHeight = maxHeight;
+			me.margins = helpers.extend({
+				left: 0,
+				right: 0,
+				top: 0,
+				bottom: 0
+			}, margins);
+			me.longestTextCache = me.longestTextCache || {};
+
+			// Dimensions
+			me.beforeSetDimensions();
+			me.setDimensions();
+			me.afterSetDimensions();
+
+			// Data min/max
+			me.beforeDataLimits();
+			me.determineDataLimits();
+			me.afterDataLimits();
+
+			// Ticks
+			me.beforeBuildTicks();
+			me.buildTicks();
+			me.generateTickDisplayPrameters();
+			me.afterBuildTicks();
+
+			me.beforeTickToLabelConversion();
+			me.convertTicksToLabels();
+			me.afterTickToLabelConversion();
+
+			// Tick Rotation
+			me.beforeCalculateTickRotation();
+			me.calculateTickRotation();
+			me.afterCalculateTickRotation();
+			// Fit
+			me.beforeFit();
+			me.fit();
+			me.afterFit();
+			//
+			me.afterUpdate();
+
+			return me.minSize;
+
+		},
+
+		// Generate ticks display parameters
+		generateTickDisplayPrameters: function() {
+
+			var me = this;
+			var opts = [
+				me.options,
+				me.options.subScale,
+				me.options.subScale.subScale
+			];
+			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
+
+			if (!me.ticks) {
+				me.ticks = [];
+			}
+
+			if ((!me.tickLevels) || (me.ticks.length !== me.tickLevels.length)) {
+				me.tickLevels = [];
+				for (var index = 0; index < me.ticks.length; index++) {
+					// default tick level = 0;
+					me.tickLevels.push(0);
+				}
+			}
+
+			var isDisplayTicks = [];
+			var displayTicks = [];
+			// Setting display flag for each tick.
+			// and setting display ticks array.
+			var isDisplay;
+			for (index = 0; index < me.ticks.length; index++) {
+				// Forced display of the first and last ticks.
+				isDisplay = index !== 0? (index !== me.ticks.length - 1? !!optsTick[me.tickLevels[index]].display: true): true;
+				isDisplayTicks.push(isDisplay);
+				if (isDisplay) {
+					displayTicks.push(me.ticks[index]);
+				}
+			}
+
+			me.isDisplayTicks = isDisplayTicks;
+			me.displayTicks = displayTicks;
+
+		},
 
 		// niceNum for fineScale
 		niceNum: function(range, round) {
@@ -73,19 +181,22 @@ module.exports = function(Chart) {
 		// @param {rectangle} chartArea: the area of the chart to draw full grid lines on
 		draw: function(chartArea) {
 			var me = this;
-			var opts = [me.options, me.options.subScale, me.options.subScale.subScale];
+			// options
+			var opts = [
+				me.options,
+				me.options.subScale,
+				me.options.subScale.subScale
+			];
 			if (!opts[0].display) {
 				return;
 			}
-
-			// canvas
-			var context = me.ctx;
-
-			// options
 			var globalDefaults = Chart.defaults.global;
 			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
 			var optsGridLines = [opts[0].gridLines, opts[1].gridLines, opts[2].gridLines];
 			var optsScaleLabel = [opts[0].scaleLabel, opts[1].scaleLabel, opts[2].scaleLabel];
+
+			// canvas
+			var context = me.ctx;
 
 			// figure out the maximum number of gridlines to show
 			var maxTicks;
@@ -663,25 +774,25 @@ module.exports = function(Chart) {
 
 			// -------
 
-			// Setting display flag for each tick.
-			// and setting display ticks array.
-			var isDisplay;
-			for (index = 0; index < ticks.length; index++) {
-				// Forced display of the first and last ticks.
-				isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
-				isDisplayTicks.push(isDisplay);
-				if (isDisplay) {
-					displayTicks.push(ticks[index]);
-				}
-			}
+			// // Setting display flag for each tick.
+			// // and setting display ticks array.
+			// var isDisplay;
+			// for (index = 0; index < ticks.length; index++) {
+			// 	// Forced display of the first and last ticks.
+			// 	isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
+			// 	isDisplayTicks.push(isDisplay);
+			// 	if (isDisplay) {
+			// 		displayTicks.push(ticks[index]);
+			// 	}
+			// }
 
 			return {
 				ticks: ticks,
 				levels: levels,
 				min: startTick,
 				max: endTick,
-				isDisplayTicks: isDisplayTicks,
-				displayTicks: displayTicks
+				// isDisplayTicks: isDisplayTicks,
+				// displayTicks: displayTicks
 			};
 		},
 
@@ -693,8 +804,8 @@ module.exports = function(Chart) {
 			var me = this;
 			me.ticks.reverse();
 			me.tickLevels.reverse();
-			me.isDisplayTicks.reverse();
-			me.displayTicks.reverse();
+			// me.isDisplayTicks.reverse();
+			// me.displayTicks.reverse();
 		},
 
 		handleDirectionalChanges: function() {
@@ -732,9 +843,8 @@ module.exports = function(Chart) {
 			var opts = me.options;
 			var optsTick = [opts.ticks, opts.subScale.ticks, opts.subScale.subScale.ticks];
 
-			var maxTicks = me.getTickLimit();
 			var numericGeneratorOptions = {
-				maxTicks: maxTicks,
+				maxTicks: me.getTickLimit(),
 				min: optsTick[0].min,
 				max: optsTick[0].max,
 				stepSize: helpers.getValueOrDefault(optsTick[0].fixedStepSize, optsTick[0].stepSize),
@@ -744,15 +854,13 @@ module.exports = function(Chart) {
 			var fineLinear = me.fineLinear(numericGeneratorOptions, me);
 			me.ticks = fineLinear.ticks;
 			me.tickLevels = fineLinear.levels;
-			me.isDisplayTicks = fineLinear.isDisplayTicks;
-			me.displayTicks = fineLinear.displayTicks;
-
-			me.handleDirectionalChanges();
-
+			// me.isDisplayTicks = fineLinear.isDisplayTicks;
+			// me.displayTicks = fineLinear.displayTicks;
 			// At this point, we need to update our max and min given the tick values
 			// since we have expanded the range of the scale
 			me.max = fineLinear.max;
 			me.min = fineLinear.min;
+			me.handleDirectionalChanges();
 
 			// Handling the reverse option.
 			if (optsTick[0].reverse) {
@@ -775,12 +883,91 @@ module.exports = function(Chart) {
 },{}],4:[function(require,module,exports){
 'use strict';
 
+module.exports = function(Chart) {
+
+	// Fine linear scale default config
+	var defaultConfig = {
+		// for scale (level:0)
+		position: 'left',
+		ticks: {
+			callback: Chart.Ticks.formatters.linear
+		},
+
+		// for sub scale (level:1)
+		subScale: {
+			display: true,
+			ticks: {
+				display: true,
+				fontSize: 11,
+			},
+			gridLines: {
+				display: true,
+				drawTicks: true,
+				color: 'rgba(0, 0, 0, 0.07)',
+			},
+			// for sub-sub scale (level:2)
+			subScale: {
+				display: true,
+				ticks: {
+					display: false,
+					fontSize: 10,
+				},
+				gridLines: {
+					display: true,
+					drawTicks: true,
+					color: 'rgba(0, 0, 0, 0.03)',
+				},
+			}
+		}
+	};
+
+	// Fine linear scale
+	var baseScale = Chart.scaleService.getScaleConstructor('linear').extend(Chart.FineScale);
+	var fineLinearCompatibilityModeScale = baseScale;
+
+	// regist fineLinear
+	Chart.scaleService.registerScaleType('fineLinearCompatibilityMode', fineLinearCompatibilityModeScale, defaultConfig);
+};
+
+},{}],5:[function(require,module,exports){
+'use strict';
+
 // var moment = require('moment');
 // moment = typeof(moment) === 'function' ? moment : window.moment;
 
 module.exports = function(Chart) {
 
-	// var helpers = Chart.helpers;
+	var helpers = Chart.helpers;
+	var time = {
+		units: [{
+			name: 'millisecond',
+			steps: [1, 2, 5, 10, 20, 50, 100, 250, 500]
+		}, {
+			name: 'second',
+			steps: [1, 2, 5, 10, 30]
+		}, {
+			name: 'minute',
+			steps: [1, 2, 5, 10, 30]
+		}, {
+			name: 'hour',
+			steps: [1, 2, 3, 6, 12]
+		}, {
+			name: 'day',
+			steps: [1, 2, 5]
+		}, {
+			name: 'week',
+			maxStep: 4
+		}, {
+			name: 'month',
+			maxStep: 3
+		}, {
+			name: 'quarter',
+			maxStep: 4
+		}, {
+			name: 'year',
+			maxStep: false
+		}]
+	};
 
 	// Fine time scale default config
 	var defaultConfig = {
@@ -842,7 +1029,155 @@ module.exports = function(Chart) {
 	};
 
 	// Fine time scale
-	var fineTimeScale = Chart.scaleService.getScaleConstructor('time').extend({
+	var baseScale = Chart.scaleService.getScaleConstructor('time').extend(Chart.FineScale);
+	var fineTimeScale = baseScale.extend({
+
+		// Generator of fine time ticks data
+		fineTime: function(generationOptions, dataRange) {
+
+		},
+
+		buildTicks: function() {
+			var me = this;
+
+			me.ctx.save();
+
+			var tickFontSize = helpers.getValueOrDefault(me.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+			var tickFontStyle = helpers.getValueOrDefault(me.options.ticks.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var tickFontFamily = helpers.getValueOrDefault(me.options.ticks.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var tickLabelFont = helpers.fontString(tickFontSize, tickFontStyle, tickFontFamily);
+
+			me.ctx.font = tickLabelFont;
+
+			me.ticks = [];
+			me.unitScale = 1; // How much we scale the unit by, ie 2 means 2x unit per step
+			me.scaleSizeInUnits = 0; // How large the scale is in the base unit (seconds, minutes, etc)
+
+			// Set unit override if applicable
+			if (me.options.time.unit) {
+				me.tickUnit = me.options.time.unit || 'day';
+				me.displayFormat = me.options.time.displayFormats[me.tickUnit];
+				me.scaleSizeInUnits = me.lastTick.diff(me.firstTick, me.tickUnit, true);
+				me.unitScale = helpers.getValueOrDefault(me.options.time.unitStepSize, 1);
+			} else {
+				// Determine the smallest needed unit of the time
+				var innerWidth = me.isHorizontal() ? me.width : me.height;
+
+				// Crude approximation of what the label length might be
+				var tempFirstLabel = me.tickFormatFunction(me.firstTick, 0, []);
+				var tickLabelWidth = me.ctx.measureText(tempFirstLabel).width;
+				var cosRotation = Math.cos(helpers.toRadians(me.options.ticks.maxRotation));
+				var sinRotation = Math.sin(helpers.toRadians(me.options.ticks.maxRotation));
+				tickLabelWidth = (tickLabelWidth * cosRotation) + (tickFontSize * sinRotation);
+				var labelCapacity = innerWidth / (tickLabelWidth);
+
+				// Start as small as possible
+				me.tickUnit = me.options.time.minUnit;
+				me.scaleSizeInUnits = me.lastTick.diff(me.firstTick, me.tickUnit, true);
+				me.displayFormat = me.options.time.displayFormats[me.tickUnit];
+
+				var unitDefinitionIndex = 0;
+				var unitDefinition = time.units[unitDefinitionIndex];
+
+				// While we aren't ideal and we don't have units left
+				while (unitDefinitionIndex < time.units.length) {
+					// Can we scale this unit. If `false` we can scale infinitely
+					me.unitScale = 1;
+
+					if (helpers.isArray(unitDefinition.steps) && Math.ceil(me.scaleSizeInUnits / labelCapacity) < helpers.max(unitDefinition.steps)) {
+						// Use one of the predefined steps
+						for (var idx = 0; idx < unitDefinition.steps.length; ++idx) {
+							if (unitDefinition.steps[idx] >= Math.ceil(me.scaleSizeInUnits / labelCapacity)) {
+								me.unitScale = helpers.getValueOrDefault(me.options.time.unitStepSize, unitDefinition.steps[idx]);
+								break;
+							}
+						}
+
+						break;
+					} else if ((unitDefinition.maxStep === false) || (Math.ceil(me.scaleSizeInUnits / labelCapacity) < unitDefinition.maxStep)) {
+						// We have a max step. Scale this unit
+						me.unitScale = helpers.getValueOrDefault(me.options.time.unitStepSize, Math.ceil(me.scaleSizeInUnits / labelCapacity));
+						break;
+					} else {
+						// Move to the next unit up
+						++unitDefinitionIndex;
+						unitDefinition = time.units[unitDefinitionIndex];
+
+						me.tickUnit = unitDefinition.name;
+						var leadingUnitBuffer = me.firstTick.diff(me.getMomentStartOf(me.firstTick), me.tickUnit, true);
+						var trailingUnitBuffer = me.getMomentStartOf(me.lastTick.clone().add(1, me.tickUnit)).diff(me.lastTick, me.tickUnit, true);
+						me.scaleSizeInUnits = me.lastTick.diff(me.firstTick, me.tickUnit, true) + leadingUnitBuffer + trailingUnitBuffer;
+						me.displayFormat = me.options.time.displayFormats[unitDefinition.name];
+					}
+				}
+			}
+
+			var roundedStart;
+
+			// Only round the first tick if we have no hard minimum
+			if (!me.options.time.min) {
+				me.firstTick = me.getMomentStartOf(me.firstTick);
+				roundedStart = me.firstTick;
+			} else {
+				roundedStart = me.getMomentStartOf(me.firstTick);
+			}
+
+			// Only round the last tick if we have no hard maximum
+			if (!me.options.time.max) {
+				var roundedEnd = me.getMomentStartOf(me.lastTick);
+				var delta = roundedEnd.diff(me.lastTick, me.tickUnit, true);
+				if (delta < 0) {
+					// Do not use end of because we need me to be in the next time unit
+					me.lastTick = me.getMomentStartOf(me.lastTick.add(1, me.tickUnit));
+				} else if (delta >= 0) {
+					me.lastTick = roundedEnd;
+				}
+
+				me.scaleSizeInUnits = me.lastTick.diff(me.firstTick, me.tickUnit, true);
+			}
+
+			// Tick displayFormat override
+			if (me.options.time.displayFormat) {
+				me.displayFormat = me.options.time.displayFormat;
+			}
+
+			// first tick. will have been rounded correctly if options.time.min is not specified
+			me.ticks.push(me.firstTick.clone());
+
+			// For every unit in between the first and last moment, create a moment and add it to the ticks tick
+			for (var i = 1; i <= me.scaleSizeInUnits; ++i) {
+				var newTick = roundedStart.clone().add(i, me.tickUnit);
+
+				// Are we greater than the max time
+				if (me.options.time.max && newTick.diff(me.lastTick, me.tickUnit, true) >= 0) {
+					break;
+				}
+
+				if (i % me.unitScale === 0) {
+					me.ticks.push(newTick);
+				}
+			}
+
+			// Always show the right tick
+			var diff = me.ticks[me.ticks.length - 1].diff(me.lastTick, me.tickUnit);
+			if (diff !== 0 || me.scaleSizeInUnits === 0) {
+				// this is a weird case. If the <max> option is the same as the end option, we can't just diff the times because the tick was created from the roundedStart
+				// but the last tick was not rounded.
+				if (me.options.time.max) {
+					me.ticks.push(me.lastTick.clone());
+					me.scaleSizeInUnits = me.lastTick.diff(me.ticks[0], me.tickUnit, true);
+				} else {
+					me.ticks.push(me.lastTick.clone());
+					me.scaleSizeInUnits = me.lastTick.diff(me.firstTick, me.tickUnit, true);
+				}
+			}
+
+			me.ctx.restore();
+
+			// Invalidate label diffs cache
+			me.labelDiffs = undefined;
+		},
+
 
 	});
 
