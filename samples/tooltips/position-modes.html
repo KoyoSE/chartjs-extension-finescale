@@ -3,7 +3,8 @@
 
 <head>
 	<title>Tooltip Interaction Modes</title>
-	<script src="../../dist/Chart.bundle.js"></script>
+    <script src="../../node_modules/chart.js/dist/Chart.bundle.js"></script>
+    <script src="../../dist/chartjs-extension-finescale.js"></script>
 	<script src="../utils.js"></script>
 	<style>
 	canvas {
@@ -60,6 +61,17 @@
 						mode: 'index',
 						intersect: false,
 					},
+                    scales: {
+                        yAxes: [{
+                            // ------- fineLinear ----------
+                            type: "fineLinear",
+                            // -----------------------------
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Fine scale - fineLinear',
+                            },
+                        }]
+                    }
 				}
 			};
 		}

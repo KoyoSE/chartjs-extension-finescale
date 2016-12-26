@@ -147,6 +147,8 @@
 		fineConfig.options.title.text = "fineLinear scale";		
 		fineConfig.options.scales.yAxes[0].type = "fineLinear";
 		fineConfig.options.scales.yAxes[0].scaleLabel.labelString = 'Fine scale - fineLinear';
+		fineConfig.options.scales.xAxes[0].type = "fineTime";
+		fineConfig.options.scales.xAxes[0].scaleLabel.labelString = 'Fine scale - fineTime';
 
 		window.onload = function () {
 			var ctx1 = document.getElementById("canvas1").getContext("2d");

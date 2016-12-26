@@ -17,12 +17,13 @@ module.exports = function(Chart) {
 			display: true,
 			ticks: {
 				display: true,
-				fontSize: 11,
+				fontSize: 12,
 			},
 			gridLines: {
 				display: true,
 				drawTicks: true,
 				color: 'rgba(0, 0, 0, 0.07)',
+				tickMarkLength: 10,
 			},
 			// for sub-sub scale (level:2)
 			subScale: {
@@ -35,14 +36,15 @@ module.exports = function(Chart) {
 					display: true,
 					drawTicks: true,
 					color: 'rgba(0, 0, 0, 0.03)',
+					// tickMarkLength: 8,
 				},
 			}
 		}
 	};
 
 	// Fine linear scale
-	var baseScale = Chart.scaleService.getScaleConstructor('linear').extend(Chart.FineScale);
-	var fineLinearScale = baseScale.extend({
+	var baseScale = Chart.scaleService.getScaleConstructor('linear');
+	var linear2Scale = baseScale.extend({
 
 		// ----------------------
 		// scale.linearbase.js Replacement
@@ -70,11 +72,11 @@ module.exports = function(Chart) {
 			var optsTick = me.options.ticks;
 
 			if (me.isHorizontal()) {
-				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 25));
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 50));
 			} else {
-				// The factor of 1.5 used to scale the font size has been experimentally determined.
+				// The factor of 2 used to scale the font size has been experimentally determined.
 				var tickFontSize = helpers.getValueOrDefault(optsTick.fontSize, Chart.defaults.global.defaultFontSize);
-				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.height / (1.5 * tickFontSize)));
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.height / (2 * tickFontSize)));
 			}
 			// Minimum is 2.
 			return Math.max(2, maxTicks);
@@ -97,7 +99,36 @@ module.exports = function(Chart) {
 				optsTick: optsTick,
 				levelMax: me.levelMax
 			};
-			var fineLinear = Chart.FineTicks.generators.fineLinear(numericGeneratorOptions, me);
+
+			me.maxTicks = [numericGeneratorOptions.maxTicks, 10, 10];
+
+			var niceNum = function(range, round, maxTicks, level) {
+				var tickRange = maxTicks? range / (maxTicks - 1): range;
+				var exponent = Math.floor(helpers.log10(tickRange));
+				var fraction = tickRange / Math.pow(10, exponent);
+
+				var niceFraction;
+				var fractionOfLevel = [];
+				if (round) {
+					fractionOfLevel[0] = 	fraction < 1.5? 1:
+											fraction < 3? 2:
+											fraction < 7? 5:
+											10;
+					fractionOfLevel[1] = 	fraction <= 1? 5:
+											10;
+					fractionOfLevel[2] = 	fraction <= 1? 5:
+											10;
+					niceFraction = fractionOfLevel[level];
+				} else {
+					niceFraction = 	fraction <= 1? 1:
+									fraction <= 2? 2:
+									fraction <= 5? 5:
+									10;
+				}
+				return niceFraction * Math.pow(10, exponent);
+			};
+
+			var fineLinear = Chart.Ticks.generators.fineLinear(numericGeneratorOptions, me, niceNum);
 			me.ticks = fineLinear.ticks;
 			me.ticksLevel = fineLinear.levels;
 			// At this point, we need to update our max and min given the tick values
@@ -120,5 +151,5 @@ module.exports = function(Chart) {
 	});
 
 	// regist fineLinear
-	Chart.scaleService.registerScaleType('fineLinear', fineLinearScale, defaultConfig);
+	Chart.scaleService.registerScaleType('linear2', linear2Scale, defaultConfig);
 };

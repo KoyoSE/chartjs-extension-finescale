@@ -40,7 +40,11 @@ module.exports = function(Chart) {
 
 	// Fine linear scale
 	var baseScale = Chart.scaleService.getScaleConstructor('linear').extend(Chart.FineScale);
-	var fineLinearCompatibilityModeScale = baseScale;
+	var fineLinearCompatibilityModeScale = baseScale.extend({
+
+
+
+	});
 
 	// regist fineLinear
 	Chart.scaleService.registerScaleType('fineLinearCompatibilityMode', fineLinearCompatibilityModeScale, defaultConfig);

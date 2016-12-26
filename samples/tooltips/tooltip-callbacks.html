@@ -3,7 +3,8 @@
 
 <head>
     <title>Tooltip Hooks</title>
-    <script src="../../dist/Chart.bundle.js"></script>
+    <script src="../../node_modules/chart.js/dist/Chart.bundle.js"></script>
+    <script src="../../dist/chartjs-extension-finescale.js"></script>
     <script src="../utils.js"></script>
     <style>
     canvas {
@@ -87,11 +88,14 @@
                         }
                     }],
                     yAxes: [{
-                        display: true,
+                        // ------- fineLinear ----------
+                        type: "fineLinear",
+                        // -----------------------------
                         scaleLabel: {
-                            show: true,
-                            labelString: 'Value'
-                        }
+                            display: true,
+                            labelString: 'Fine scale - fineLinear',
+                        },
+                        display: true,
                     }]
                 }
             }

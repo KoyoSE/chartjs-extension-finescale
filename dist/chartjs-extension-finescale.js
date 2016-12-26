@@ -15,9 +15,14 @@
 require(2)(Chart);
 require(3)(Chart);
 require(5)(Chart);
+require(7)(Chart);
 require(4)(Chart);
 
-},{"2":2,"3":3,"4":4,"5":5}],2:[function(require,module,exports){
+// test scales
+require(8)(Chart);
+require(6)(Chart);
+
+},{"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8}],2:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {
@@ -30,17 +35,25 @@ module.exports = function(Chart) {
 		// core.helpers.js Replacement
 		// ----------------------
 
-		// getOptionsAry: function() {
+		getScaleOptionsAray: function(arg) {
 
-		// 	var me = this;
-		// 	var opts = [
-		// 		me.options,
-		// 		me.options.subScale? me.options.subScale: me.options,
-		// 		me.options.subScale.subScale? me.options.subScale.subScale: me.options
-		// 	];
-		// 	return opts;
+			var me = this;
 
-		// },
+			var opts = [];
+			opts[0] = me.options;
+			opts[1] = opts[0].subScale? opts[0].subScale: {};
+			opts[2] = opts[1].subScale? opts[1].subScale: {};
+
+			if (arg) {
+				return [
+					opts[0][arg]? opts[0][arg]: {},
+					opts[1][arg]? opts[1][arg]: {},
+					opts[2][arg]? opts[2][arg]: {}
+				];
+			}
+			return opts;
+
+		},
 
 
 		update: function(maxWidth, maxHeight, margins) {
@@ -73,17 +86,20 @@ module.exports = function(Chart) {
 			// Ticks
 			me.beforeBuildTicks();
 			me.buildTicks();
-			me.generateTickDisplayPrameters();
 			me.afterBuildTicks();
 
+			// Convert
 			me.beforeTickToLabelConversion();
 			me.convertTicksToLabels();
+			me.generateTicksInformation();
 			me.afterTickToLabelConversion();
 
 			// Tick Rotation
 			me.beforeCalculateTickRotation();
 			me.calculateTickRotation();
+			me.preventionTicksDisplay();
 			me.afterCalculateTickRotation();
+
 			// Fit
 			me.beforeFit();
 			me.fit();
@@ -95,61 +111,45 @@ module.exports = function(Chart) {
 
 		},
 
-		// Generate ticks display parameters
-		generateTickDisplayPrameters: function() {
+		// Generate ticksDisplay, ticksDisplayIndex and ticksIsDisplay
+		generateTicksInformation: function() {
 
 			var me = this;
-			var opts = [
-				me.options,
-				me.options.subScale,
-				me.options.subScale.subScale
-			];
-			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
+			// var opts = me.getScaleOptionsAray();
+			var optsTicks = me.getScaleOptionsAray('ticks');
 
 			if (!me.ticks) {
 				me.ticks = [];
 			}
 
-			if ((!me.tickLevels) || (me.ticks.length !== me.tickLevels.length)) {
-				me.tickLevels = [];
+			if ((!me.ticksLevel) || (me.ticks.length !== me.ticksLevel.length)) {
+				me.ticksLevel = [];
 				for (var index = 0; index < me.ticks.length; index++) {
 					// default tick level = 0;
-					me.tickLevels.push(0);
+					me.ticksLevel.push(0);
 				}
 			}
 
-			var isDisplayTicks = [];
-			var displayTicks = [];
+			var ticksIsDisplay = [];
+			var ticksDisplayIndex = [];
+			var ticksDisplay = [];
 			// Setting display flag for each tick.
 			// and setting display ticks array.
 			var isDisplay;
 			for (index = 0; index < me.ticks.length; index++) {
 				// Forced display of the first and last ticks.
-				isDisplay = index !== 0? (index !== me.ticks.length - 1? !!optsTick[me.tickLevels[index]].display: true): true;
-				isDisplayTicks.push(isDisplay);
+				isDisplay = index !== 0? (index !== me.ticks.length - 1? !!optsTicks[me.ticksLevel[index]].display: true): true;
+				ticksIsDisplay.push(isDisplay);
 				if (isDisplay) {
-					displayTicks.push(me.ticks[index]);
+					ticksDisplay.push(me.ticks[index]);
+					ticksDisplayIndex.push(index);
 				}
 			}
 
-			me.isDisplayTicks = isDisplayTicks;
-			me.displayTicks = displayTicks;
+			me.ticksIsDisplay = ticksIsDisplay;
+			me.ticksDisplay = ticksDisplay;
+			me.ticksDisplayIndex = ticksDisplayIndex;
 
-		},
-
-		// niceNum for fineScale
-		niceNum: function(range, round) {
-			var exponent = Math.floor(helpers.log10(range));
-			var fraction = range / Math.pow(10, exponent);
-
-			var niceFraction;
-			if (round) {
-				niceFraction = fraction <= 1? 5: (fraction <= 5? 10: 20);
-			} else {
-				niceFraction = fraction <= 1? 1: (fraction <= 2? 2: (fraction <= 5? 5: 10));
-			}
-
-			return niceFraction * Math.pow(10, exponent);
 		},
 
 		// ----------------------
@@ -180,36 +180,25 @@ module.exports = function(Chart) {
 		// Actually draw the scale on the canvas
 		// @param {rectangle} chartArea: the area of the chart to draw full grid lines on
 		draw: function(chartArea) {
+
+			var me = this;
+			// draw
+			me.drawCanvas(me.getItemsToDraw(chartArea));
+
+		},
+
+		// get draw data
+		getItemsToDraw: function(chartArea) {
+
 			var me = this;
 			// options
-			var opts = [
-				me.options,
-				me.options.subScale,
-				me.options.subScale.subScale
-			];
+			var opts = me.getScaleOptionsAray();
 			if (!opts[0].display) {
 				return;
 			}
 			var globalDefaults = Chart.defaults.global;
-			var optsTick = [opts[0].ticks, opts[1].ticks, opts[2].ticks];
-			var optsGridLines = [opts[0].gridLines, opts[1].gridLines, opts[2].gridLines];
-			var optsScaleLabel = [opts[0].scaleLabel, opts[1].scaleLabel, opts[2].scaleLabel];
-
-			// canvas
-			var context = me.ctx;
-
-			// figure out the maximum number of gridlines to show
-			var maxTicks;
-			if (optsTick[0].maxTicksLimit) {
-				maxTicks = optsTick[0].maxTicksLimit;
-			}
-
-			// for tick
-			var tickFont = [
-				me.parseFontOptions(optsTick[0]),
-				me.parseFontOptions(optsTick[1]),
-				me.parseFontOptions(optsTick[2])
-			];
+			var optsTicks = me.getScaleOptionsAray('ticks');
+			var optsGridLines = me.getScaleOptionsAray('gridLines');
 
 			// tick length
 			var tl = optsGridLines[0].drawTicks? [
@@ -218,12 +207,6 @@ module.exports = function(Chart) {
 				optsGridLines[2].drawTicks? optsGridLines[2].tickMarkLength || optsGridLines[0].tickMarkLength * 0.4: 0  // sub-sub tick length
 			]: [0, 0, 0];
 
-			// draw data
-			var itemsToDraw = [];
-
-			// for scale label
-			var scaleLabelFontColor = helpers.getValueOrDefault(optsScaleLabel[0].fontColor, globalDefaults.defaultFontColor);
-			var scaleLabelFont = me.parseFontOptions(optsScaleLabel[0]);
 
 			var isHorizontal = me.isHorizontal();
 			var isRotated = me.labelRotation !== 0;
@@ -231,22 +214,30 @@ module.exports = function(Chart) {
 			// -----
 			var labelRotationRadians = helpers.toRadians(me.labelRotation);
 
+			var itemsToDraw = [];
+
 			if (isHorizontal) {
 				// horizontal
-				var skipRatio = false;
+
+				// figure out the maximum number of gridlines to show
+				var maxTicks;
+				if (optsTicks[0].maxTicksLimit) {
+					maxTicks = optsTicks[0].maxTicksLimit;
+				}
 
 				// Calculating autoskip
-				if (optsTick[0].autoSkip) {
+				var skipRatio = false;
+				if (optsTicks[0].autoSkip) {
 					var cosRotation = Math.cos(labelRotationRadians);
 					var longestRotatedLabelWidth = isRotated? me.longestLabelWidth * cosRotation / 2: me.longestLabelWidth * cosRotation;
-					var ticksWidth = (longestRotatedLabelWidth + optsTick[0].autoSkipPadding) * me.displayTicks.length;
+					var ticksWidth = (longestRotatedLabelWidth + optsTicks[0].autoSkipPadding) * me.ticksDisplay.length;
 					var scaleWidth = (me.width - (me.paddingLeft + me.paddingRight));
 					if (ticksWidth > scaleWidth) {
 						skipRatio = 1 + Math.floor(ticksWidth / scaleWidth);
 					}
 					// if they defined a max number of optionTicks,
 					// increase skipRatio until that number is met
-					if (maxTicks && me.displayTicks.length > maxTicks) {
+					if (maxTicks && me.ticksDisplay.length > maxTicks) {
 						while (!skipRatio || me.ticks.length / (skipRatio || 1) > maxTicks) {
 							if (!skipRatio) {
 								skipRatio = 1;
@@ -259,22 +250,30 @@ module.exports = function(Chart) {
 			}
 			// -----
 
+			// ticks
+			var tickFont = [
+				me.parseFontOptions(optsTicks[0]),
+				me.parseFontOptions(optsTicks[1]),
+				me.parseFontOptions(optsTicks[2])
+			];
+
 			helpers.each(me.ticks, function(label, index) {
 				// If the callback returned a null or undefined value, do not draw this line
 				if (label === undefined || label === null) {
 					return;
 				}
 
-				var level = me.tickLevels[index];
+				var level = me.ticksLevel[index];
 
+				var isFirstTick = index === 0;
+				var isLastTick = index === me.ticks.length - 1;
 				// display option
-				if (!opts[level].display) {
+				if (!opts[0].display || (!isFirstTick && !isLastTick && !opts[level].display)) {
 					return;
 				}
 
 				// Process of autoSkip
-				var isLastTick = me.displayTicks.length === index + 1;
-				var shouldSkip = (skipRatio > 1 && index % skipRatio > 0) || (index % skipRatio === 0 && index + skipRatio >= me.displayTicks.length);
+				var shouldSkip = (skipRatio > 1 && index % skipRatio > 0) || (index % skipRatio === 0 && index + skipRatio >= me.ticksDisplay.length);
 				if (shouldSkip && !isLastTick) {
 					return;
 				}
@@ -305,7 +304,7 @@ module.exports = function(Chart) {
 				}
 
 				// label
-				var lFontColor = helpers.getValueOrDefault(optsTick[level].fontColor, globalDefaults.defaultFontColor);
+				var lFontColor = helpers.getValueOrDefault(optsTicks[level].fontColor, globalDefaults.defaultFontColor);
 
 				// Common properties
 				var tx1, ty1, tx2, ty2, x1, y1, x2, y2, labelX, labelY;
@@ -318,22 +317,23 @@ module.exports = function(Chart) {
 					// label
 					if (opts[0].position === 'bottom') {
 						// bottom
-						textBaseline = 'top';
+						textBaseline = !isRotated? 'top':'middle';
 						textAlign = !isRotated? 'center': 'right';
 						labelY = isRotated? me.top + tl[0]: me.top + tl[level];
 					} else {
 						// top
-						textBaseline = 'bottom';
+						textBaseline = !isRotated? 'bottom':'middle';
 						textAlign = !isRotated? 'center': 'left';
 						labelY = isRotated? me.bottom - tl[0]: me.bottom - tl[level];
 					}
 					// x values for optionTicks (need to consider offsetLabel option)
-					labelX = me.getPixelForTick(index, optsGridLines[0].offsetGridLines) + optsTick[0].labelOffset;
+					labelX = me.getPixelForTick(index, optsGridLines[0].offsetGridLines) + optsTicks[0].labelOffset;
 
 					// ticks
 					var xLineValue = me.getPixelForTick(index) + helpers.aliasPixel(lineWidth);
 					var yTickStart = opts[0].position === 'bottom'? me.top: me.bottom - tl[level];
 					var yTickEnd = opts[0].position === 'bottom'? me.top + tl[level]: me.bottom;
+
 					tx1 = tx2 = x1 = x2 = xLineValue;
 					ty1 = yTickStart;
 					ty2 = yTickEnd;
@@ -344,11 +344,11 @@ module.exports = function(Chart) {
 				} else {
 					// vertical
 					var isLeft = opts[0].position === 'left';
-					var tickPadding = optsTick[0].padding;
+					var tickPadding = optsTicks[0].padding;
 					var labelXOffset;
 
 					// label
-					if (optsTick[0].mirror) {
+					if (optsTicks[0].mirror) {
 						textAlign = isLeft? 'left': 'right';
 						labelXOffset = tickPadding;
 					} else {
@@ -358,10 +358,9 @@ module.exports = function(Chart) {
 					labelX = isLeft? me.right - labelXOffset: me.left + labelXOffset;
 					var yLineValue = me.getPixelForTick(index) + helpers.aliasPixel(lineWidth);
 					labelY = me.getPixelForTick(index, optsGridLines[0].offsetGridLines);
-
-					// ticks
 					var xTickStart = opts[0].position === 'right'? me.left: me.right - tl[level];
 					var xTickEnd = opts[0].position === 'right'? me.left + tl[level]: me.right;
+
 					tx1 = xTickStart;
 					tx2 = xTickEnd;
 					// glid line
@@ -382,6 +381,7 @@ module.exports = function(Chart) {
 					tlX2: tx2,
 					tlY2: ty2,
 					tlColor: optsGridLines[0].color,
+					tFont: tickFont[level],
 					// grid line on chart area
 					glDraw: drawOnChartArea,
 					glX1: x1,
@@ -393,7 +393,7 @@ module.exports = function(Chart) {
 					glBorderDash: borderDash,
 					glBorderDashOffset: borderDashOffset,
 					// label
-					lDisplay: me.isDisplayTicks[index],
+					lDisplay: me.ticksIsDisplay[index],
 					lX: labelX,
 					lY: labelY,
 					label: label,
@@ -403,6 +403,24 @@ module.exports = function(Chart) {
 					lFontColor: lFontColor,
 				});
 			});
+			return itemsToDraw;
+		},
+
+		drawCanvas: function(itemsToDraw) {
+
+			var me = this;
+			// canvas
+			var context = me.ctx;
+			// options
+			var opts = me.getScaleOptionsAray();
+			var globalDefaults = Chart.defaults.global;
+			var isHorizontal = me.isHorizontal();
+			var optsGridLines = me.getScaleOptionsAray('gridLines');
+
+			// for scale label
+			var optsScaleLabel = me.getScaleOptionsAray('scaleLabel');
+			var scaleLabelFontColor = helpers.getValueOrDefault(optsScaleLabel[0].fontColor, globalDefaults.defaultFontColor);
+			var scaleLabelFont = me.parseFontOptions(optsScaleLabel[0]);
 
 			// Draw all of the tick labels, tick marks, and grid lines at the correct places
 			helpers.each(itemsToDraw, function(itemToDraw) {
@@ -446,7 +464,7 @@ module.exports = function(Chart) {
 					context.save();
 					context.translate(itemToDraw.lX, itemToDraw.lY);
 					context.rotate(itemToDraw.lRotation);
-					context.font = tickFont[itemToDraw.level].font;
+					context.font = itemToDraw.tFont.font;
 					context.fillStyle = itemToDraw.lFontColor;
 					context.textBaseline = itemToDraw.lTextBaseline;
 					context.textAlign = itemToDraw.lTextAlign;
@@ -457,7 +475,7 @@ module.exports = function(Chart) {
 							// We just make sure the multiline element is a string here..
 							context.fillText('' + label[i], 0, y);
 							// apply same linestepSize as calculated @ L#320
-							y += (tickFont[itemToDraw.level].size * 1.5);
+							y += (itemToDraw.tFont.size * 1.5);
 						}
 					} else {
 						context.fillText(label, 0, 0);
@@ -467,7 +485,7 @@ module.exports = function(Chart) {
 
 			});
 
-			// ------
+			// -----------
 
 			// display scale label
 			if (optsScaleLabel[0].display) {
@@ -485,7 +503,7 @@ module.exports = function(Chart) {
 					var isLeft = opts[0].position === 'left';
 					scaleLabelX = isLeft? me.left + (scaleLabelFont.size / 2): me.right - (scaleLabelFont.size / 2);
 					scaleLabelY = me.top + ((me.bottom - me.top) / 2);
-					rotation = isLeft? -0.5 * Math.PI: -0.5 * Math.PI;
+					rotation = -0.5 * Math.PI;
 				}
 
 				context.save();
@@ -525,37 +543,33 @@ module.exports = function(Chart) {
 				context.lineTo(x2, y2);
 				context.stroke();
 			}
+
 		},
 
-		// Prevention of overlap Ticks
-		// The function name 'calculateTickRotation' is not appropriate, but it is not changed for compatibility.
+
 		calculateTickRotation: function() {
 			var me = this;
 			var context = me.ctx;
-			var optsTick = [me.options.ticks, me.options.subScale.ticks, me.options.subScale.subScale.ticks];
+			var optsTick = me.getScaleOptionsAray('ticks');
 			var tickFont = me.parseFontOptions(optsTick[0]);
 			var labelRotation = me.labelRotation = optsTick[0].minRotation || 0;
 			if (!me.options.display) {
 				return;
 			}
 
-			var tickFirst = me.displayTicks[0];
-			var tickSecond = me.displayTicks[1];
-			var tickSecondLast = me.displayTicks[me.displayTicks.length - 2];
-			var tickLast = me.displayTicks[me.displayTicks.length - 1];
+			var tickFirst = me.ticksDisplayIndex[0];
+			var tickSecond = me.ticksDisplayIndex[1];
+			var tickSecondLast = me.ticksDisplayIndex[me.ticksDisplay.length - 2];
+			var tickLast = me.ticksDisplayIndex[me.ticksDisplay.length - 1];
 
 			if (me.isHorizontal()) {
-				// ------
-				// calculate tick rotation
-				// ------
 				// horizontal
-				var originalLabelWidth = helpers.longestText(context, tickFont.font, me.displayTicks, me.longestTextCache);
+				var originalLabelWidth = helpers.longestText(context, tickFont.font, me.ticksDisplay, me.longestTextCache);
 				var labelWidth = originalLabelWidth;
 				var cosRotation;
 				var sinRotation;
-
-				var tickWidthLeft = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst) - 6;
-				var tickWidthRight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast) - 6;
+				var tickWidthLeft = me.getPixelForTick(tickSecond) - me.getPixelForTick(tickFirst) - 6;
+				var tickWidthRight = me.getPixelForTick(tickLast) - me.getPixelForTick(tickSecondLast) - 6;
 
 				var tickWidth = Math.min(tickWidthLeft, tickWidthRight);
 				// Max label rotation can be set or default to 90 - also act as a loop counter
@@ -573,55 +587,207 @@ module.exports = function(Chart) {
 					labelRotation++;
 					labelWidth = cosRotation * originalLabelWidth;
 				}
+				// result
 				me.labelRotation = labelRotation;
 
+			}
 
-				// ------
-				// Prevent overlap ticks of max,min
-				// ------
+		},
+
+		// Prevention of overlap Ticks near min max.
+		// Prevention of overlap Ticks.
+		preventionTicksDisplay: function() {
+			var me = this;
+			var context = me.ctx;
+			var optsTick = me.getScaleOptionsAray('ticks');
+			var tickFont = me.parseFontOptions(optsTick[0]);
+			var labelRotation = me.labelRotation;
+			if (!me.options.display) {
+				return;
+			}
+
+			var tickFirst = me.ticksDisplayIndex[0];
+			var tickSecond = me.ticksDisplayIndex[1];
+			var tickSecondLast = me.ticksDisplayIndex[me.ticksDisplay.length - 2];
+			var tickLast = me.ticksDisplayIndex[me.ticksDisplay.length - 1];
+
+			if (me.isHorizontal()) {
 				// horizontal
-				var pointer;
-				// var tickHeight, labelWidth;
-				angleRadians = helpers.toRadians(labelRotation);
-				cosRotation = Math.cos(angleRadians);
 
-				labelWidth = cosRotation * context.measureText(tickSecond).width;
-				if ((optsTick[0].min !== undefined) && (tickWidthLeft < labelWidth)) {
-					pointer = me.ticks.indexOf(tickSecond.toString(10));
-					me.isDisplayTicks[pointer] = false;
+				// ---------
+				// for edge of scale
+				var tickWidthLeft = me.getPixelForTick(tickSecond) - me.getPixelForTick(tickFirst) - 6;
+				var tickWidthRight = me.getPixelForTick(tickLast) - me.getPixelForTick(tickSecondLast) - 6;
+				var cosRotation = Math.cos(helpers.toRadians(labelRotation));
+				var labelWidth;
+				// near min
+				labelWidth = cosRotation * context.measureText(me.ticks[tickSecond]).width;
+				labelWidth = labelRotation > 25? labelWidth / 3: labelWidth;
+				if (tickWidthLeft < labelWidth) {
+					me.ticksIsDisplay[tickSecond] = false;
 				}
-				labelWidth = cosRotation * context.measureText(tickLast).width;
-				if ((optsTick[0].max !== undefined) && (tickWidthRight < labelWidth)) {
-					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
-					me.isDisplayTicks[pointer] = false;
+				// near max
+				labelWidth = cosRotation * context.measureText(me.ticks[tickLast]).width;
+				labelWidth = labelRotation > 25? labelWidth / 3: labelWidth;
+				if (tickWidthRight < labelWidth) {
+					me.ticksIsDisplay[tickSecondLast] = false;
 				}
 
 			} else {
-				// ------
-				// Prevent overlap ticks of max,min
-				// ------
 				// vertical
-
 				var tickHeight, labelHeight;
+
+				// Ticks mark overlap prevention.
 				// Temporaly (font size)*1.2 = label height
 				// ex) Math.round(18px * 1.2) = 22
-				labelHeight = Math.round(tickFont.size * 1.2);
+				labelHeight = Math.round(tickFont.size * 1.2 * 2); // The factor of *2 has been experimentally determined.
+				var po1, po2, isOverlap, le1, le2;
+				var isDisplayOfLevel = [true, true, true];
 
-				tickHeight = me.getPixelForValue(tickSecond) - me.getPixelForValue(tickFirst);
-				if ((optsTick[0].min !== undefined) && (tickHeight < labelHeight)) {
-					pointer = me.ticks.indexOf(tickSecond.toString(10));
-					me.isDisplayTicks[pointer] = false;
+				for (var i = 0; i < me.ticksDisplay.length - 1; i++) {
+					po1 = me.ticksDisplayIndex[i];
+					po2 = me.ticksDisplayIndex[i + 1];
+					le1 = me.ticksLevel[po1];
+					le2 = me.ticksLevel[po2];
+					tickHeight = me.getPixelForTick(po2) - me.getPixelForTick(po1);
+					isOverlap = me.ticksIsDisplay[po1] && me.ticksIsDisplay[po2] && (tickHeight < labelHeight);
+					if (isOverlap) {
+						isDisplayOfLevel[Math.max(le1, le2)] = false;
+					}
 				}
-				tickHeight = me.getPixelForValue(tickLast) - me.getPixelForValue(tickSecondLast);
-				if ((optsTick[0].max !== undefined) && (tickHeight < labelHeight)) {
-					pointer = me.ticks.indexOf(tickSecondLast.toString(10));
-					me.isDisplayTicks[pointer] = false;
+				isDisplayOfLevel[0] = true;
+				for (i = 1; i < me.ticksIsDisplay.length - 1; i++) {
+					me.ticksIsDisplay[i] = me.ticksIsDisplay[i] && isDisplayOfLevel[me.ticksLevel[i]];
+				}
+
+				// ---------
+				// for edge of scale
+				labelHeight = Math.round(tickFont.size * 1.2);
+				// near min
+				tickHeight = me.getPixelForTick(tickSecond) - me.getPixelForTick(tickFirst);
+				if (tickHeight < labelHeight) {
+					me.ticksIsDisplay[tickSecond] = false;
+				}
+				// near max
+				tickHeight = me.getPixelForTick(tickLast) - me.getPixelForTick(tickSecondLast);
+				if (tickHeight < labelHeight) {
+					me.ticksIsDisplay[tickSecondLast] = false;
 				}
 
 			}
-			// ------
 		},
 
+		fit: function() {
+			var me = this;
+			// Reset
+			var minSize = me.minSize = {
+				width: 0,
+				height: 0
+			};
+
+			var opts = me.getScaleOptionsAray();
+			var optsTicks = me.getScaleOptionsAray('ticks');
+			var optsScaleLabel = me.getScaleOptionsAray('scaleLabel');
+			var optsGridLine = me.getScaleOptionsAray('gridLines');
+
+			var display = opts[0].display;
+			var isHorizontal = me.isHorizontal();
+
+			var tickFont = me.parseFontOptions(optsTicks[0]);
+			var scaleLabelFontSize = me.parseFontOptions(optsScaleLabel[0]).size * 1.5;
+			var tickMarkLength = opts[0].gridLines.tickMarkLength;
+
+			// Width
+			if (isHorizontal) {
+				// subtract the margins to line up with the chartArea if we are a full width scale
+				minSize.width = me.isFullWidth() ? me.maxWidth - me.margins.left - me.margins.right : me.maxWidth;
+			} else {
+				minSize.width = display && optsGridLine[0].drawTicks ? tickMarkLength : 0;
+			}
+
+			// height
+			if (isHorizontal) {
+				minSize.height = display && optsGridLine[0].drawTicks ? tickMarkLength : 0;
+			} else {
+				minSize.height = me.maxHeight; // fill all the height
+			}
+
+			// Are we showing a title for the scale?
+			if (optsScaleLabel[0].display && display) {
+				if (isHorizontal) {
+					minSize.height += scaleLabelFontSize;
+				} else {
+					minSize.width += scaleLabelFontSize;
+				}
+			}
+
+			// Don't bother fitting the ticks if we are not showing them
+			if (optsTicks[0].display && display) {
+				var largestTextWidth = helpers.longestText(me.ctx, tickFont.font, me.ticksDisplay, me.longestTextCache);
+				var tallestLabelHeightInLines = helpers.numberOfLabelLines(me.ticks);
+				var lineSpace = tickFont.size * 0.5;
+
+				if (isHorizontal) {
+					// A horizontal axis is more constrained by the height.
+					me.longestLabelWidth = largestTextWidth;
+
+					var angleRadians = helpers.toRadians(me.labelRotation);
+					var cosRotation = Math.cos(angleRadians);
+					var sinRotation = Math.sin(angleRadians);
+
+					// TODO - improve this calculation
+					var labelHeight = (sinRotation * largestTextWidth)
+						+ (tickFont.size * tallestLabelHeightInLines)
+						+ (lineSpace * tallestLabelHeightInLines);
+
+					minSize.height = Math.min(me.maxHeight, minSize.height + labelHeight);
+					me.ctx.font = tickFont.font;
+
+					var firstTick = me.ticksDisplay[0];
+					var firstLabelWidth = me.computeTextSize(me.ctx, firstTick, tickFont.font);
+
+					var lastTick = me.ticksDisplay[me.ticksDisplay.length - 1];
+					var lastLabelWidth = me.computeTextSize(me.ctx, lastTick, tickFont.font);
+
+					// Ensure that our ticks are always inside the canvas. When rotated, ticks are right aligned which means that the right padding is dominated
+					// by the font height
+
+					// if (opts[0].position === 'bottom') {
+					// 	me.paddingLeft = me.labelRotation !== 0? (cosRotation * firstLabelWidth) + 3: firstLabelWidth / 2 + 3; // add 3 px to move away from canvas edges
+					// 	me.paddingRight = me.labelRotation !== 0? (cosRotation * lineSpace) + 3: lastLabelWidth / 2 + 3;
+					// } else {
+					// 	me.paddingLeft = me.labelRotation !== 0? (cosRotation * lineSpace) + 3: firstLabelWidth / 2 + 3; // add 3 px to move away from canvas edges
+					// 	me.paddingRight = me.labelRotation !== 0? (cosRotation * lastLabelWidth) + 3: lastLabelWidth / 2 + 3;
+					// }
+
+					if (me.labelRotation !== 0) {
+						me.paddingLeft = opts[0].position === 'bottom'? (cosRotation * firstLabelWidth) + 3: (cosRotation * lineSpace) + 3; // add 3 px to move away from canvas edges
+						me.paddingRight = opts[0].position === 'bottom'? (cosRotation * lineSpace) + 3: (cosRotation * lastLabelWidth) + 3;
+					} else {
+						me.paddingLeft = firstLabelWidth / 2 + 3; // add 3 px to move away from canvas edges
+						me.paddingRight = lastLabelWidth / 2 + 3;
+					}
+
+				} else {
+					// A vertical axis is more constrained by the width. Labels are the dominant factor here, so get that length first
+					// Account for padding
+
+					if (optsTicks[0].mirror) {
+						largestTextWidth = 0;
+					} else {
+						largestTextWidth += optsTicks[0].padding;
+					}
+					minSize.width += largestTextWidth;
+					me.paddingTop = tickFont.size / 2;
+					me.paddingBottom = tickFont.size / 2;
+				}
+			}
+
+			me.handleMargins();
+
+			me.width = minSize.width;
+			me.height = minSize.height;
+		},
 	};
 
 };
@@ -633,10 +799,196 @@ module.exports = function(Chart) {
 
 	var helpers = Chart.helpers;
 
+	/**
+	 * Namespace to hold static tick generation functions
+	 * @namespace Chart.Ticks
+	 */
+	Chart.FineTicks = {
+		generators: {
+			// niceNum for fineScale
+			// helpers.niceNumForFineScale = function(range, round, maxTicks, level) {
+			niceNumForFineScale: function(range, round, maxTicks) {
+				var tickRange = maxTicks? range / (maxTicks - 1): range;
+				var exponent = Math.floor(helpers.log10(tickRange));
+				var fraction = tickRange / Math.pow(10, exponent);
+				var niceFraction;
+				if (round) {
+					niceFraction = 	fraction <= 1? 5:
+									10;
+				} else {
+					niceFraction = 	fraction <= 1? 1:
+									fraction <= 2? 2:
+									fraction <= 5? 5:
+									10;
+				}
+				return niceFraction * Math.pow(10, exponent);
+			},
+
+			// Generator of fine linear ticks data
+			fineLinear: function(generationOptions, dataRange, callback) {
+				var me = this;
+				// for return
+				var ticks = [];
+				var levels = [];
+
+				// var niceNum = callback? callback: helpers.niceNumForFineScale;
+				var niceNum = callback? callback: me.niceNumForFineScale;
+				var niceRange = niceNum(dataRange.max - dataRange.min, false);
+				var stepSize = [];
+				stepSize[0] = niceNum(niceRange, true, generationOptions.maxTicks, 0);
+				stepSize[1] = niceNum(stepSize[0], true, 11, 1);
+				stepSize[2] = niceNum(stepSize[1], true, 11, 2);
+				// Pointer of minimum stepSize.
+				var pointerStepSize = 2;
+				// var isRev = dataRange.max < dataRange.min;
+				// var min = isRev? dataRange.max: dataRange.min;
+				// var max = isRev? dataRange.min: dataRange.max;
+
+				// process of stepSize option
+				if (generationOptions.stepSize && generationOptions.stepSize > 0) {
+					// The maximum number of ticks is 1000.
+					// This is for performance.
+					var gStepSize = generationOptions.stepSize;
+					while ((dataRange.max - dataRange.min) / gStepSize > 1000) {
+						gStepSize *= 10;
+					}
+					// Check the stepSize of each tick level and
+					// set the minimum stepSize to generationOptions.stepSize.
+					var value = gStepSize;
+					for (var i = 0; i < generationOptions.levelMax; i++) {
+						if (stepSize[i] <= gStepSize) {
+							stepSize[i] = value;
+							pointerStepSize = value !== 0? i: pointerStepSize;
+							value = 0;
+						}
+					}
+					stepSize[pointerStepSize] = stepSize[pointerStepSize] > gStepSize? gStepSize: stepSize[pointerStepSize];
+				}
+
+				// Nice numerical value for min & max
+				var niceMin = Math.floor(dataRange.min / stepSize[0]) * stepSize[0];
+				var niceMax = Math.ceil(dataRange.max / stepSize[0]) * stepSize[0];
+				// If min, max and stepSize is set and they make an evenly spaced scale use it.
+				if (generationOptions.min && generationOptions.max && generationOptions.stepSize) {
+					// If very close to our whole number, use it.
+					// if (helpers.almostWhole((generationOptions.max - generationOptions.min) / generationOptions.stepSize, spacing / 1000)) {
+					niceMin = generationOptions.min;
+					niceMax = generationOptions.max;
+					// }
+				}
+				// Max and Min value of scale
+				var startTick = generationOptions.min !== undefined? generationOptions.min: niceMin;
+				var endTick = generationOptions.max !== undefined? generationOptions.max: niceMax;
+
+				// ss: stepSize
+				var getDicimalDigits = function(ss) {
+					ss = ss === 0? 1: ss;
+					var exponent = Math.floor(helpers.log10(ss));
+
+					return {
+						digits: exponent > 0? 0: Math.abs(exponent),
+						magnification: Math.pow(10, exponent)
+					};
+				};
+
+				// Calculation parameters
+				var stepSizeDicimal = [
+					getDicimalDigits(stepSize[0]),
+					getDicimalDigits(stepSize[1]),
+					getDicimalDigits(stepSize[2])
+				];
+
+				// -------
+				// Create ticks data
+
+				// ----
+				// Calculation of scale level (0-2)
+				// nm : niceMin
+				// tv: tickValue
+				// ss: stepSize[]
+				// mc: magnification
+				// ----
+				var level, tickValue;
+				var getLevel = function(nm, tv, ss, mc) {
+					// Level discrimination
+					var t1 = (tv - nm) / mc % (ss[0] / mc);
+					var t2 = (tv - nm) / mc % (ss[1] / mc);
+					return t1 === 0? 0: (t2 === 0? 1: 2);
+				};
+
+				// Number of tick for loop
+				var stepCount = +(((niceMax - niceMin) / stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits));
+				// --push start tick--
+				ticks.push(startTick);
+				levels.push(getLevel(niceMin, startTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
+				for (var index = 1; index < stepCount; index++) {
+					tickValue = +(niceMin + index * stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits);
+					if ((tickValue <= startTick) || (endTick <= tickValue)) {
+						continue;
+					}
+					level = getLevel(niceMin, tickValue, stepSize, stepSizeDicimal[pointerStepSize].magnification);
+					// --push ticks--
+					ticks.push(+((tickValue).toFixed(stepSizeDicimal[level].digits)));
+					levels.push(level);
+				}
+				// --push end tick--
+				ticks.push(endTick);
+				levels.push(getLevel(niceMin, endTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
+
+				// -------
+				return {
+					ticks: ticks,
+					levels: levels,
+					min: startTick,
+					max: endTick,
+				};
+			}
+		}
+	};
+};
+
+},{}],4:[function(require,module,exports){
+'use strict';
+
+module.exports = function(Chart) {
+
+	// var temp;
+
+	// temp = Chart.scaleService.constructors.linear.extend(Chart.FineScale);
+	// Chart.scaleService.constructors.linear = temp;
+
+	// temp = Chart.scaleService.constructors.time.extend(Chart.FineScale);
+	// Chart.scaleService.constructors.time = temp;
+
+	// temp = Chart.scaleService.constructors.category.extend(Chart.FineScale);
+	// Chart.scaleService.constructors.category = temp;
+
+	// temp = Chart.scaleService.constructors.logarithmic.extend(Chart.FineScale);
+	// Chart.scaleService.constructors.logarithmic = temp;
+
+
+
+
+	// temp = Chart.scaleService.constructors.radialLinear.extend(Chart.FineScale);
+	// Chart.scaleService.constructors.radialLinear = temp;
+
+
+};
+
+},{}],5:[function(require,module,exports){
+'use strict';
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
 	// Fine linear scale default config
 	var defaultConfig = {
 		// for scale (level:0)
 		position: 'left',
+		ticks: {
+			autoSkip: false,
+		},
 
 		// for sub scale (level:1)
 		subScale: {
@@ -671,143 +1023,13 @@ module.exports = function(Chart) {
 	var fineLinearScale = baseScale.extend({
 
 		// ----------------------
-		// core.ticks.js Replacement
-		// ----------------------
-
-		// Generator of fine linear ticks data
-		fineLinear: function(generationOptions, dataRange) {
-			var me = this;
-			// for return
-			var ticks = [];
-			var levels = [];
-			var isDisplayTicks = [];
-			var displayTicks = [];
-			// options
-			var optsTick = generationOptions.optsTick;
-			// factor
-			var niceRange = me.niceNum(dataRange.max - dataRange.min, false);
-			var stepSize = [];
-			stepSize[0] = me.niceNum(niceRange / (generationOptions.maxTicks - 1), true);
-			stepSize[1] = me.niceNum(stepSize[0] / 10, true);
-			stepSize[2] = me.niceNum(stepSize[1] / 10, true);
-			// Pointer of minimum stepSize.
-			var pointerStepSize = 2;
-
-			// process of stepSize option
-			if (generationOptions.stepSize && generationOptions.stepSize > 0) {
-				// The maximum number of ticks is 1000.
-				// This is for performance.
-				var gStepSize = generationOptions.stepSize;
-				while ((dataRange.max - dataRange.min) / gStepSize > 1000) {
-					gStepSize *= 10;
-				}
-				// Check the stepSize of each tick level and
-				// set the minimum stepSize to generationOptions.stepSize.
-				var value = gStepSize;
-				for (var i = 0; i < generationOptions.levelMax; i++) {
-					if (stepSize[i] <= gStepSize) {
-						stepSize[i] = value;
-						pointerStepSize = value !== 0? i: pointerStepSize;
-						value = 0;
-					}
-				}
-				stepSize[pointerStepSize] = stepSize[pointerStepSize] > gStepSize? gStepSize: stepSize[pointerStepSize];
-			}
-
-			// Nice numerical value for min & max
-			var niceMin = Math.floor(dataRange.min / stepSize[0]) * stepSize[0];
-			var niceMax = Math.ceil(dataRange.max / stepSize[0]) * stepSize[0];
-			// Max and Min value of scale
-			var startTick = generationOptions.min !== undefined? generationOptions.min: niceMin;
-			var endTick = generationOptions.max !== undefined? generationOptions.max: niceMax;
-
-			// ss: stepSize
-			var getDicimalDigits = function(ss) {
-				ss = ss === 0? 1: ss;
-				var exponent = Math.floor(helpers.log10(ss));
-
-				return {
-					digits: exponent > 0? 0: Math.abs(exponent),
-					magnification: Math.pow(10, exponent)
-				};
-			};
-
-			// Calculation parameters
-			var stepSizeDicimal = [
-				getDicimalDigits(stepSize[0]),
-				getDicimalDigits(stepSize[1]),
-				getDicimalDigits(stepSize[2])
-			];
-
-			// -------
-			// Create ticks data
-
-			// Calculation of scale level (0-2)
-			var level, tickValue;
-
-			// tv: tickValue
-			// ss: stepSize[]
-			// mc: magnification
-			var getLevel = function(tv, ss, mc) {
-				// Level discrimination
-				var t1 = (tv / mc) % (ss[0] / mc);
-				var t2 = (tv / mc) % (ss[1] / mc);
-				return t1 === 0? 0: (t2 === 0? 1: 2);
-			};
-
-			// Number of tick for loop
-			var stepCount = +(((niceMax - niceMin) / stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits));
-			// --push start tick--
-			ticks.push(startTick);
-			levels.push(getLevel(startTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
-			for (var index = 1; index < stepCount; index++) {
-				tickValue = niceMin + +((index * stepSize[pointerStepSize]).toFixed(stepSizeDicimal[pointerStepSize].digits));
-				if ((tickValue <= startTick) || (endTick <= tickValue)) {
-					continue;
-				}
-				level = getLevel(tickValue, stepSize, stepSizeDicimal[pointerStepSize].magnification);
-				// --push ticks--
-				ticks.push(+((tickValue).toFixed(stepSizeDicimal[level].digits)));
-				levels.push(level);
-			}
-			// --push end tick--
-			ticks.push(endTick);
-			levels.push(getLevel(endTick, stepSize, stepSizeDicimal[pointerStepSize].magnification));
-
-			// -------
-
-			// // Setting display flag for each tick.
-			// // and setting display ticks array.
-			// var isDisplay;
-			// for (index = 0; index < ticks.length; index++) {
-			// 	// Forced display of the first and last ticks.
-			// 	isDisplay = index !== 0? (index !== ticks.length - 1? !!optsTick[levels[index]].display: true): true;
-			// 	isDisplayTicks.push(isDisplay);
-			// 	if (isDisplay) {
-			// 		displayTicks.push(ticks[index]);
-			// 	}
-			// }
-
-			return {
-				ticks: ticks,
-				levels: levels,
-				min: startTick,
-				max: endTick,
-				// isDisplayTicks: isDisplayTicks,
-				// displayTicks: displayTicks
-			};
-		},
-
-		// ----------------------
 		// scale.linearbase.js Replacement
 		// ----------------------
 
 		ticksReverse: function() {
 			var me = this;
 			me.ticks.reverse();
-			me.tickLevels.reverse();
-			// me.isDisplayTicks.reverse();
-			// me.displayTicks.reverse();
+			me.ticksLevel.reverse();
 		},
 
 		handleDirectionalChanges: function() {
@@ -826,7 +1048,7 @@ module.exports = function(Chart) {
 			var optsTick = me.options.ticks;
 
 			if (me.isHorizontal()) {
-				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 50));
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 25));
 			} else {
 				// The factor of 1.5 used to scale the font size has been experimentally determined.
 				var tickFontSize = helpers.getValueOrDefault(optsTick.fontSize, Chart.defaults.global.defaultFontSize);
@@ -853,11 +1075,9 @@ module.exports = function(Chart) {
 				optsTick: optsTick,
 				levelMax: me.levelMax
 			};
-			var fineLinear = me.fineLinear(numericGeneratorOptions, me);
+			var fineLinear = Chart.FineTicks.generators.fineLinear(numericGeneratorOptions, me);
 			me.ticks = fineLinear.ticks;
-			me.tickLevels = fineLinear.levels;
-			// me.isDisplayTicks = fineLinear.isDisplayTicks;
-			// me.displayTicks = fineLinear.displayTicks;
+			me.ticksLevel = fineLinear.levels;
 			// At this point, we need to update our max and min given the tick values
 			// since we have expanded the range of the scale
 			me.max = fineLinear.max;
@@ -866,7 +1086,6 @@ module.exports = function(Chart) {
 
 			// Handling the reverse option.
 			if (optsTick[0].reverse) {
-				// ticks.reverse();
 				me.ticksReverse();
 				me.start = me.max;
 				me.end = me.min;
@@ -882,7 +1101,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType('fineLinear', fineLinearScale, defaultConfig);
 };
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {
@@ -925,13 +1144,17 @@ module.exports = function(Chart) {
 
 	// Fine linear scale
 	var baseScale = Chart.scaleService.getScaleConstructor('linear').extend(Chart.FineScale);
-	var fineLinearCompatibilityModeScale = baseScale;
+	var fineLinearCompatibilityModeScale = baseScale.extend({
+
+
+
+	});
 
 	// regist fineLinear
 	Chart.scaleService.registerScaleType('fineLinearCompatibilityMode', fineLinearCompatibilityModeScale, defaultConfig);
 };
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 // var moment = require('moment');
@@ -1185,6 +1408,163 @@ module.exports = function(Chart) {
 
 	// regist fineTime
 	Chart.scaleService.registerScaleType('fineTime', fineTimeScale, defaultConfig);
+};
+
+},{}],8:[function(require,module,exports){
+'use strict';
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	// Fine linear scale default config
+	var defaultConfig = {
+		// for scale (level:0)
+		position: 'left',
+		ticks: {
+			autoSkip: false,
+		},
+
+		// for sub scale (level:1)
+		subScale: {
+			display: true,
+			ticks: {
+				display: true,
+				fontSize: 12,
+			},
+			gridLines: {
+				display: true,
+				drawTicks: true,
+				color: 'rgba(0, 0, 0, 0.07)',
+				tickMarkLength: 10,
+			},
+			// for sub-sub scale (level:2)
+			subScale: {
+				display: true,
+				ticks: {
+					display: false,
+					fontSize: 10,
+				},
+				gridLines: {
+					display: true,
+					drawTicks: true,
+					color: 'rgba(0, 0, 0, 0.03)',
+					// tickMarkLength: 8,
+				},
+			}
+		}
+	};
+
+	// Fine linear scale
+	var baseScale = Chart.scaleService.getScaleConstructor('linear');
+	var linear2Scale = baseScale.extend({
+
+		// ----------------------
+		// scale.linearbase.js Replacement
+		// ----------------------
+
+		ticksReverse: function() {
+			var me = this;
+			me.ticks.reverse();
+			me.ticksLevel.reverse();
+		},
+
+		handleDirectionalChanges: function() {
+			var me = this;
+			if (!me.isHorizontal()) {
+				// We are in a vertical orientation. The top value is the highest. So reverse the array
+				// this.ticks.reverse();
+				me.ticksReverse();
+			}
+		},
+
+		// Compute an tick number upper limit depending on display area.
+		getTickLimit: function() {
+			var me = this;
+			var maxTicks;
+			var optsTick = me.options.ticks;
+
+			if (me.isHorizontal()) {
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.width / 50));
+			} else {
+				// The factor of 2 used to scale the font size has been experimentally determined.
+				var tickFontSize = helpers.getValueOrDefault(optsTick.fontSize, Chart.defaults.global.defaultFontSize);
+				maxTicks = Math.min(optsTick.maxTicksLimit? optsTick.maxTicksLimit: 11, Math.ceil(me.height / (2 * tickFontSize)));
+			}
+			// Minimum is 2.
+			return Math.max(2, maxTicks);
+		},
+
+		// Build of ticks
+		buildTicks: function() {
+			var me = this;
+			// constant of sub scale max.
+			me.levelMax = 3;
+			// options
+			var opts = me.options;
+			var optsTick = [opts.ticks, opts.subScale.ticks, opts.subScale.subScale.ticks];
+
+			var numericGeneratorOptions = {
+				maxTicks: me.getTickLimit(),
+				min: optsTick[0].min,
+				max: optsTick[0].max,
+				stepSize: helpers.getValueOrDefault(optsTick[0].fixedStepSize, optsTick[0].stepSize),
+				optsTick: optsTick,
+				levelMax: me.levelMax
+			};
+
+			me.maxTicks = [numericGeneratorOptions.maxTicks, 10, 10];
+
+			var niceNum = function(range, round, maxTicks, level) {
+				var tickRange = maxTicks? range / (maxTicks - 1): range;
+				var exponent = Math.floor(helpers.log10(tickRange));
+				var fraction = tickRange / Math.pow(10, exponent);
+
+				var niceFraction;
+				var fractionOfLevel = [];
+				if (round) {
+					fractionOfLevel[0] = 	fraction < 1.5? 1:
+											fraction < 3? 2:
+											fraction < 7? 5:
+											10;
+					fractionOfLevel[1] = 	fraction <= 1? 5:
+											10;
+					fractionOfLevel[2] = 	fraction <= 1? 5:
+											10;
+					niceFraction = fractionOfLevel[level];
+				} else {
+					niceFraction = 	fraction <= 1? 1:
+									fraction <= 2? 2:
+									fraction <= 5? 5:
+									10;
+				}
+				return niceFraction * Math.pow(10, exponent);
+			};
+
+			var fineLinear = Chart.Ticks.generators.fineLinear(numericGeneratorOptions, me, niceNum);
+			me.ticks = fineLinear.ticks;
+			me.ticksLevel = fineLinear.levels;
+			// At this point, we need to update our max and min given the tick values
+			// since we have expanded the range of the scale
+			me.max = fineLinear.max;
+			me.min = fineLinear.min;
+			me.handleDirectionalChanges();
+
+			// Handling the reverse option.
+			if (optsTick[0].reverse) {
+				me.ticksReverse();
+				me.start = me.max;
+				me.end = me.min;
+			} else {
+				me.start = me.min;
+				me.end = me.max;
+			}
+		},
+
+	});
+
+	// regist fineLinear
+	Chart.scaleService.registerScaleType('linear2', linear2Scale, defaultConfig);
 };
 
 },{}]},{},[1]);
