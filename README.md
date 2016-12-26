@@ -7,4 +7,8 @@
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=flat)](LICENSE)
 
 
-[Demo](https://jsfiddle.net/KoyoSE/c7orw1ka/)
+## Demo
+
+<p data-height="500" data-theme-id="0" data-slug-hash="VmOgJB" data-default-tab="result" data-user="KoyoSE" data-embed-version="2" data-pen-title="Chart.js : Fine scale extension." class="codepen">See the Pen <a href="http://codepen.io/KoyoSE/pen/VmOgJB/">Chart.js : Fine scale extension.</a> by SAiTO TOSHiKi (<a href="http://codepen.io/KoyoSE">@KoyoSE</a>) on <a href="http://codepen.io">CodePen</a>.</p>
+<script async src="https://production-assets.codepen.io/assets/embed/ei.js"></script>
+

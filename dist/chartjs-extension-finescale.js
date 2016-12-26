@@ -788,6 +788,20 @@ module.exports = function(Chart) {
 			me.width = minSize.width;
 			me.height = minSize.height;
 		},
+		/**
+		 * Handle margins and padding interactions
+		 * @private
+		 */
+		handleMargins: function() {
+			var me = this;
+			if (me.margins) {
+				me.paddingLeft = Math.max(me.paddingLeft - me.margins.left, 0);
+				me.paddingTop = Math.max(me.paddingTop - me.margins.top, 0);
+				me.paddingRight = Math.max(me.paddingRight - me.margins.right, 0);
+				me.paddingBottom = Math.max(me.paddingBottom - me.margins.bottom, 0);
+			}
+		},
+
 	};
 
 };
@@ -1116,11 +1130,7 @@ module.exports = function(Chart) {
 
 	// Fine linear scale
 	var baseScale = Chart.scaleService.getScaleConstructor('linear').extend(Chart.FineScale);
-	var fineLinearCompatibilityModeScale = baseScale.extend({
-
-
-
-	});
+	var fineLinearCompatibilityModeScale = baseScale.extend({});
 
 	// regist fineLinear
 	Chart.scaleService.registerScaleType('fineLinearCompatibilityMode', fineLinearCompatibilityModeScale, defaultConfig);
@@ -1230,9 +1240,9 @@ module.exports = function(Chart) {
 	var fineTimeScale = baseScale.extend({
 
 		// Generator of fine time ticks data
-		fineTime: function(generationOptions, dataRange) {
+		// fineTime: function(generationOptions, dataRange) {
 
-		},
+		// },
 
 		buildTicks: function() {
 			var me = this;
