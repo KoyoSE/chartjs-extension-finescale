@@ -1,6 +1,6 @@
-'use strict';
+// 'use strict';
 
-module.exports = function(Chart) {
+// module.exports = function(Chart) {
 
 	// var temp;
 
@@ -16,11 +16,7 @@ module.exports = function(Chart) {
 	// temp = Chart.scaleService.constructors.logarithmic.extend(Chart.FineScale);
 	// Chart.scaleService.constructors.logarithmic = temp;
 
-
-
-
 	// temp = Chart.scaleService.constructors.radialLinear.extend(Chart.FineScale);
 	// Chart.scaleService.constructors.radialLinear = temp;
 
-
-};
+// };

@@ -101,9 +101,9 @@ module.exports = function(Chart) {
 	var fineTimeScale = baseScale.extend({
 
 		// Generator of fine time ticks data
-		fineTime: function(generationOptions, dataRange) {
+		// fineTime: function(generationOptions, dataRange) {
 
-		},
+		// },
 
 		buildTicks: function() {
 			var me = this;

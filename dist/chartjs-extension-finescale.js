@@ -14,15 +14,15 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 require(2)(Chart);
 require(3)(Chart);
-require(5)(Chart);
-require(7)(Chart);
 require(4)(Chart);
-
-// test scales
-require(8)(Chart);
 require(6)(Chart);
 
-},{"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8}],2:[function(require,module,exports){
+// test scales
+require(7)(Chart);
+require(5)(Chart);
+// require('./overwrite.js')(Chart);
+
+},{"2":2,"3":3,"4":4,"5":5,"6":6,"7":7}],2:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {
@@ -952,34 +952,6 @@ module.exports = function(Chart) {
 
 module.exports = function(Chart) {
 
-	// var temp;
-
-	// temp = Chart.scaleService.constructors.linear.extend(Chart.FineScale);
-	// Chart.scaleService.constructors.linear = temp;
-
-	// temp = Chart.scaleService.constructors.time.extend(Chart.FineScale);
-	// Chart.scaleService.constructors.time = temp;
-
-	// temp = Chart.scaleService.constructors.category.extend(Chart.FineScale);
-	// Chart.scaleService.constructors.category = temp;
-
-	// temp = Chart.scaleService.constructors.logarithmic.extend(Chart.FineScale);
-	// Chart.scaleService.constructors.logarithmic = temp;
-
-
-
-
-	// temp = Chart.scaleService.constructors.radialLinear.extend(Chart.FineScale);
-	// Chart.scaleService.constructors.radialLinear = temp;
-
-
-};
-
-},{}],5:[function(require,module,exports){
-'use strict';
-
-module.exports = function(Chart) {
-
 	var helpers = Chart.helpers;
 
 	// Fine linear scale default config
@@ -1101,7 +1073,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType('fineLinear', fineLinearScale, defaultConfig);
 };
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {
@@ -1154,7 +1126,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType('fineLinearCompatibilityMode', fineLinearCompatibilityModeScale, defaultConfig);
 };
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 // var moment = require('moment');
@@ -1410,7 +1382,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType('fineTime', fineTimeScale, defaultConfig);
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 module.exports = function(Chart) {

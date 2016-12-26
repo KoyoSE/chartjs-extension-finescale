@@ -11,7 +11,7 @@ describe('fineLinear Scale', function() {
 			{
 				display: true,
 				position: 'left',
-				gridLines: ({
+				gridLines: {
 					display: true,
 					color: 'rgba(0, 0, 0, 0.1)',
 					lineWidth: 1,
@@ -24,12 +24,12 @@ describe('fineLinear Scale', function() {
 					offsetGridLines: false,
 					borderDash: [],
 					borderDashOffset: 0
-				}),
-				scaleLabel: ({
+				},
+				scaleLabel: {
 					labelString: '',
 					display: false
-				}),
-				ticks: ({
+				},
+				ticks: {
 					beginAtZero: false,
 					minRotation: 0,
 					maxRotation: 50,
@@ -37,35 +37,35 @@ describe('fineLinear Scale', function() {
 					padding: 0,
 					reverse: false,
 					display: true,
-					autoSkip: true,
+					autoSkip: false,
 					autoSkipPadding: 0,
 					labelOffset: 0,
 					callback: defaultConfig.ticks.callback,
-				}),
-				subScale: ({
+				},
+				subScale: {
 					display: true,
-					ticks: ({
+					ticks: {
 						display: true,
 						fontSize: 11
-					}),
-					gridLines: ({
+					},
+					gridLines: {
 						display: true,
 						drawTicks: true,
 						color: 'rgba(0, 0, 0, 0.07)'
-					}),
-					subScale: ({
+					},
+					subScale: {
 						display: true,
-						ticks: ({
+						ticks: {
 							display: false,
 							fontSize: 10
-						}),
-						gridLines: ({
+						},
+						gridLines: {
 							display: true,
 							drawTicks: true,
 							color: 'rgba(0, 0, 0, 0.03)'
-						})
-					})
-				})
+						}
+					}
+				}
 			});
 		expect(defaultConfig.ticks.callback).toEqual(jasmine.any(Function));
 	});
@@ -537,7 +537,7 @@ describe('fineLinear Scale', function() {
 		expect(chart.scales.yScale0).not.toEqual(undefined); // must construct
 		expect(chart.scales.yScale0.min).toBe(1);
 		expect(chart.scales.yScale0.max).toBe(11);
-		expect(chart.scales.yScale0.ticks).toEqual(['11', '10', '8', '6', '4', '2', '1']);
+		expect(chart.scales.yScale0.ticks).toEqual(['11', '9', '7', '5', '3', '1']);
 	});
 
 
