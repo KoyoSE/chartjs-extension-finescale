@@ -16,23 +16,26 @@ var source = require('vinyl-source-stream');
 var collapse = require('bundle-collapser/plugin');
 var argv = require('yargs').argv;
 var package = require('./package.json');
+var config = require('config');
+var GitHubApi = require('github');
+var pify = require('pify');
 
+var github = new GitHubApi({ debug: false });
 var srcDir = './src/';
 var outDir = './dist/';
 var testDir = './test/';
+
+var packageName = package.name + '.js';
+var packageNameMin = package.name + '.min.js';
 
 var header = '/* !\n' +
 	' * chartjs-extension-finescale.js\n' +
 	' *\n' +
 	' * Version: {{ version }}\n' +
 	' *\n' +
-	' * chartjs-extension-finescale.js Copyright 2016 koyoSE\n' +
+	' * chartjs-extension-finescale.js Copyright 2017 koyoSE\n' +
 	' * Released under the MIT license\n' +
-	' * https://github.com/KoyoSE/chartjs-extension-finescale.git\n' +
-	' *\n' +
-	' * Chart.js Copyright 2016 Nick Downie\n' +
-	' * Released under the MIT license\n' +
-	' * https://github.com/chartjs/Chart.js/blob/master/LICENSE.md\n' +
+	' * https://github.com/KoyoSE/chartjs-extension-finescale/blob/master/LICENSE.md\n' +
 	' */\n';
 
 var preTestFiles = [
@@ -182,6 +185,42 @@ function _openTask() {
 	exec('subl .');
 }
 
+// release
+github.authenticate(config.auth);
+
+function release() {
+
+	return pify(github.repos.createRelease)({
+		owner: 'KoyoSE',
+		repo: 'chartjs-extension-finescale',
+		tag_name: 'v' + package.version,
+		body: 'Release v' + package.version,
+		prerelease: true
+	})
+		.then(function (res) {
+			util.log('Release "' + res.tag_name + '" created');
+			return res.id;
+		})
+		.then(function (id) {
+			pify(github.repos.uploadAsset)({
+				owner: 'KoyoSE',
+				repo: 'chartjs-extension-finescale',
+				id: id,
+				name: packageNameMin,
+				filePath: outDir + packageNameMin
+			})
+			pify(github.repos.uploadAsset)({
+				owner: 'KoyoSE',
+				repo: 'chartjs-extension-finescale',
+				id: id,
+				name: packageName,
+				filePath: outDir + packageName
+			})
+		})
+		.then(function () {
+			util.log('Asset files uploaded');
+		});
+};
 
 // -----------------------
 gulp.task('build', buildTask);
@@ -199,4 +238,5 @@ gulp.task('module-sizes', moduleSizesTask);
 gulp.task('_open', _openTask);
 gulp.task('dev', ['server', 'default']);
 gulp.task('default', ['build', 'watch']);
+gulp.task('release', release);
 // -----------------------

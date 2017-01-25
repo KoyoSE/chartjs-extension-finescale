@@ -1,7 +1,7 @@
 {
-  "name": "chartjs-extension-finescale.js",
+  "name": "chartjs-extension-finescale",
   "description": "Fine scale extension for chart.js.",
-  "version": "0.0.1",
+  "version": "0.1.8",
   "license": "MIT",
   "main": "src/chartjs-extension-finescale.js",
   "repository": {
@@ -17,7 +17,9 @@
     "browserify": "^13.0.0",
     "browserify-istanbul": "^0.2.1",
     "bundle-collapser": "^1.2.1",
+    "config": "^1.24.0",
     "coveralls": "^2.11.6",
+    "github": "^8.1.1",
     "gulp": "3.9.x",
     "gulp-concat": "~2.1.x",
     "gulp-connect": "~2.0.5",
@@ -42,6 +44,7 @@
     "karma-jasmine": "^0.3.6",
     "karma-jasmine-html-reporter": "^0.1.8",
     "merge-stream": "^1.0.0",
+    "pify": "^2.3.0",
     "vinyl-source-stream": "^1.1.0",
     "watchify": "^3.7.0",
     "yargs": "^5.0.0"
