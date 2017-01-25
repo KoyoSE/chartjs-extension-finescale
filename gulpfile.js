@@ -33,7 +33,7 @@ var header = '/* !\n' +
 	' *\n' +
 	' * Version: {{ version }}\n' +
 	' *\n' +
-	' * chartjs-extension-finescale.js Copyright 2017 koyoSE\n' +
+	' * chartjs-extension-finescale.js Copyright 2017 KoyoSE\n' +
 	' * Released under the MIT license\n' +
 	' * https://github.com/KoyoSE/chartjs-extension-finescale/blob/master/LICENSE.md\n' +
 	' */\n';
