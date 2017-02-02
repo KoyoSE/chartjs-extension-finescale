@@ -1,3 +1,5 @@
+Work in progress...
+
 # chartjs-extension-finescale.js
 
 [![Build Status](https://travis-ci.org/KoyoSE/chartjs-extension-finescale.svg?branch=master)](https://travis-ci.org/KoyoSE/chartjs-extension-finescale)
